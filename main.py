@@ -1,4 +1,5 @@
 from io import StringIO
+from time import perf_counter
 import sys
 
 from pdfminer.high_level import extract_text_to_fp
@@ -261,61 +262,30 @@ def findWholeWord(w):
     return re.compile(r'\b^({0})$\b'.format(w), flags=re.IGNORECASE).search
 
 def search_summary_keywords():
-    keywords = [
-        "mri", 
-        "scan",
-        "gait",
-        "severe",
-        "moderate",
-        "cane",
-        "device",
-        "mild",
-        "abnormal",
-        "surgery",
-        "xray",
-        "xr",
-        "stand",
-        "walk",
-        "reach",
-        "grip",
-        "weak",
-        "loss",
-        "fatigue",
-        "dizzy",
-        "dizziness",
-        "headache",
-        "pain",
-        "extreme",
-        "limit",
-        "pinched",
-        "fracture",
-        "ambulate",
-        "compress",
-        "delusion",
-        "mra",
-        "emg",
-        "ncr",
-        "ncn",
-        "disability",
-        "disabled",
-        "disable",
-        "sob",
-        "edema",
-        "strength",
-        "adl",
-        "unable",
-        "refuse",
-        "refusing",
-        "refused",
-        "rehab",
-        "symptoms"
-    ]
+    
+    with open(r".\\keywordscan\\keywords.txt", "r") as keyword_file:
+        file_content = keyword_file.read()
+        keywords = file_content.split('\n') 
+    
+    fieldnames = ['keyword', 'page', 'text', 'exhibit', 'provider', 'exhibit_page']
 
-    fieldnames = ['keyword', 'page', 'text']
-
-    with open(r"D:\\Downloads\\2835258-amanda_lail-case_file_exhibited_bookmarked-7-08-2021-1625784254 w notes.pdf", 'rb') as in_file: 
+    #pdf_file =  "D:\\Downloads\\west ex file comp OCR.pdf"
+    pdf_file = "D:\\Downloads\\2835258-amanda_lail-case_file_exhibited_bookmarked-7-08-2021-1625784254 w notes.pdf"
+    with open(pdf_file, 'rb') as in_file: 
         parser = PDFParser(in_file)
         doc = PDFDocument(parser)
+        outlines = doc.get_outlines()
+        index = 1
+        provider = ''
+        page_metadata = {index: {'provider': '','exhibit_page': ''}}
+        for (level, title, dest, a, se) in outlines:
+            if level == 2:
+                provider = title
+            if level == 3:
+                index += 1
+                page_metadata[index] = {'provider': provider,'exhibit_page': title}
+                
+
         rsrcmgr = PDFResourceManager()
 
         output = []
@@ -326,14 +296,21 @@ def search_summary_keywords():
             output_string = StringIO()
             device = TextConverter(rsrcmgr, output_string, laparams=LAParams())
             interpreter = PDFPageInterpreter(rsrcmgr, device)
-            #if page.annots:
-                 #for annot in page.annots:
-                     #por = PDFObjRef.resolve(annot)
-                     #print(por)
-                     #aid = por['T'].decode("utf-8")
-                     #idtopg[aid] = pge
-                     
-                
+            #print(page.contents)
+            #continue
+            if page.label:
+                exhibit = page.label
+            else:
+                exhibit = ""
+            
+            #if page.attrs:
+                #print(page.attrs)
+                #print(PDFStream.decode(page.contents))
+                #for x in page.attrs:
+                    #por = PDFObjRef.resolve(x['Contents'])
+                    #print(por)
+                    #aid = por['T'].decode("utf-8")
+                                     
             interpreter.process_page(page)
             pge += 1
             #if pge > 100:
@@ -343,18 +320,21 @@ def search_summary_keywords():
             list_text = list(page_text.split(" "))
             list_text = [w.lower() for w in list_text]
             for keyword in keywords:
-                #if findWholeWord(keyword)(page_text):
                 if keyword in list_text:
                     kw_idx = list_text.index(keyword)
                     if kw_idx > 10:
                         text_sample_list = list_text[kw_idx-10:kw_idx+10]
                     if kw_idx <= 10:
-                        text_sample_list = list_text[kw_idx:kw_idx+10]                      
-                    text_sample = ' '.join(text_sample_list)
+                        text_sample_list = list_text[kw_idx:kw_idx+10]
+                                          
+                    text_sample = ' '.join(text_sample_list).replace('\n', '_')
                     pageData = {
                         'keyword': keyword,
                         'page': pge,
-                        'text': text_sample
+                        'text': text_sample,
+                        'exhibit': exhibit,
+                        'provider': page_metadata[pge]['provider'],
+                        'exhibit_page': page_metadata[pge]['exhibit_page']
                     }
                         
                     output.append(pageData)
@@ -365,20 +345,22 @@ def search_summary_keywords():
         csvdw = DictWriter(f, fieldnames=fieldnames)
         csvdw.writeheader()
         csvdw.writerows(output)
-        #f.write(str(output))    
-    
+        
     print('\nfinds: ' + str(resultCount))
     print('done')
+    return
     #print(output_string.getvalue())
 
 def main() -> None:
-
+    debut = perf_counter()
     #summary_data = SummaryData()
     #summary_data.set_bookmarks()
     #summary_data.set_comments()
     #summary_data.export()
 
     search_summary_keywords()
+    fin = perf_counter()
+    print(f"Completed in {fin - debut:0.4f}s")
     return
 
 
