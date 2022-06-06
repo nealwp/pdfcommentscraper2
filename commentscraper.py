@@ -1,33 +1,15 @@
-from io import StringIO
 from time import perf_counter
-import sys
-
-from pdfminer.high_level import extract_text_to_fp
-
-from pdfminer.converter import TextConverter, PDFPageAggregator
-from pdfminer.layout import LAParams
-from pdfminer.pdfdocument import PDFDocument
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.pdfpage import PDFPage
-from pdfminer.pdfparser import PDFParser
-from pdfminer.pdftypes import PDFObjRef, PDFStream
-
-from csv import writer, DictWriter, QUOTE_MINIMAL
-import re
 from PyPDF2 import PdfFileReader
 from PyPDF2.generic import ByteStringObject
 
-
-from os import path, remove, system
+from os import path
 from pathlib import Path
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import asksaveasfilename
 from tkinter import messagebox
 
-from keywordscan import scanforkeywords
 from helpers import write_csv, get_file_path, get_save_path
-
 
 class ErrorLog:
     """ Error log object """
@@ -214,3 +196,11 @@ class SummaryData:
                 messagebox.showerror("Error", "File not saved!")
         else:
             messagebox.showwarning("Warning", "No comments found in " + self.src)
+
+
+def scrape_comments():
+    summary_data = SummaryData()
+    summary_data.set_bookmarks()
+    summary_data.set_comments()
+    summary_data.export()
+    return

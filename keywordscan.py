@@ -7,17 +7,13 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 
-from csv import DictWriter
-from os import path
-
 def scanforkeywords(pdf_path):
     
     with open(r".\\config\\keywords", "r") as keyword_file:
         file_content = keyword_file.read()
         keywords = file_content.split('\n') 
+        keywords = [w for w in keywords if w]
     
-    fieldnames = ['keyword', 'page', 'text', 'exhibit', 'provider', 'exhibit_page']
-
     with open(pdf_path, 'rb') as in_file: 
         parser = PDFParser(in_file)
         doc = PDFDocument(parser)
@@ -85,12 +81,7 @@ def scanforkeywords(pdf_path):
                     output.append(pageData)
                     resultCount += 1
             output_string.close()
-    
-    with open(path.join('./','pdfoutput.csv'),'w',encoding='utf-8', newline='') as f:
-        csvdw = DictWriter(f, fieldnames=fieldnames)
-        csvdw.writeheader()
-        csvdw.writerows(output)
-        
+            
     print('\nfinds: ' + str(resultCount))
     print('done')
-    return
+    return output
