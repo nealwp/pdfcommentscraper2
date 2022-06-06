@@ -2,3 +2,7 @@ disabilitydude
 __pycache__
 output
 *.csv
+dist
+build
+*.spec
+*.zip
