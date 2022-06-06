@@ -54,8 +54,8 @@ def scanforkeywords(pdf_path):
                                      
             interpreter.process_page(page)
             pge += 1
-            if pge > 100:
-                break
+            #if pge > 100:
+            #    break
             print("processing page [%d]\r"%pge, end="")
             page_text = output_string.getvalue()
             list_text = list(page_text.split(" "))
