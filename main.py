@@ -8,6 +8,76 @@ from keywordscan import scanforkeywords
 
 from helpers import write_csv, get_file_path, get_save_path
 
+class StatusBar(Frame):
+    
+    def __init__(self, parent, *args, **kwargs):
+        Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        
+        self.status = Label(self.frame, text="Ready", anchor=W, padx=5)
+        self.status.grid(column=0, row=0, sticky='w', columnspan=1)
+        
+        self.version = Label(self.frame, text='v1.0.0', anchor=E, padx=5)
+        self.version.grid(column=1, row=0, sticky="e", columnspan=1)
+        
+        self.frame.columnconfigure(0, weight=1)
+
+class MenuBar(Frame):
+    def __init__(self, parent, *args, **kwargs) -> None:
+        Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.parent.menubar = Menu(self.parent, bd=5)
+
+        self.filemenu = Menu(self.parent.menubar, tearoff=0)
+        self.filemenu.add_command(label="Exit", command=parent.destroy)
+        self.parent.menubar.add_cascade(label="File", menu=self.filemenu)
+
+        self.actions_menu = Menu(self.parent.menubar, tearoff=0)
+        self.actions_menu.add_command(label="Scan PDF for Keywords", command=run_keyword_scan)
+        self.actions_menu.add_command(label="Scrape Comments from PDF", command=run_commentscraper)
+        self.parent.menubar.add_cascade(label="Actions", menu=self.actions_menu)
+        
+        self.settingsmenu = Menu(self.parent.menubar, tearoff=0)
+        self.settingsmenu.add_command(label="Keywords", command=lambda: open_keywords_menu(parent))
+        self.settingsmenu.add_command(label="Context Size", command=lambda: open_context_size_menu(parent))
+        self.parent.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
+        
+        self.parent.menubar.add_command(label="Help")
+        
+        self.parent.config(menu=self.parent.menubar)
+
+class AppRoot(Frame):
+    def __init__(self, parent, *args, **kwargs) -> None:
+        Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.parent.attributes('-alpha', 0.0)
+        self.parent.geometry('809x500')
+        self.parent.title('disabilitydude')
+
+        self.menubar = MenuBar(self.parent)
+        self.status_bar = StatusBar(self.parent, bd=1, relief=SUNKEN)
+        
+        #self.parent._center()
+        self.parent.attributes('-alpha', 1.0)
+        #self.root.mainloop()
+
+    def _center(self):
+        """
+        centers a tkinter window
+        :param win: the main window or Toplevel window to center
+        """
+        self.root.update_idletasks()
+        width = self.root.winfo_width()
+        frm_width = self.root.winfo_rootx() - self.root.winfo_x()
+        win_width = width + 2 * frm_width
+        height = self.root.winfo_height()
+        titlebar_height = self.root.winfo_rooty() - self.root.winfo_y()
+        win_height = height + titlebar_height + frm_width
+        x = self.root.winfo_screenwidth() // 2 - win_width // 2
+        y = self.root.winfo_screenheight() // 2 - win_height // 2
+        self.root.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+        self.root.deiconify()
+
 def findWholeWord(w):
     return re.compile(r'\b^({0})$\b'.format(w), flags=re.IGNORECASE).search
 
@@ -158,9 +228,11 @@ def open_context_size_menu(root):
 
 def main() -> None:
 
-    root = Tk()
-    root.attributes('-alpha', 0.0)
-    root.geometry('809x500')
+    root = AppRoot()
+
+    #root = Tk()
+    #root.attributes('-alpha', 0.0)
+    #root.geometry('809x500')
     """ menu bar setup """
     menubar = Menu(root, bd=5)
     filemenu = Menu(menubar, tearoff=0)
@@ -181,24 +253,26 @@ def main() -> None:
     
     root.config(menu=menubar)
 
-    status_bar = Frame(root, bd=1, relief=SUNKEN)
+    status_bar = StatusBar(root)
     
-    status_message = Label(status_bar, text="Ready", anchor=W, padx=5)
-    status_message.grid(column=0, row=0, sticky='w', columnspan=1)
+    #status_message = Label(status_bar, text="Ready", anchor=W, padx=5)
+    #status_message.grid(column=0, row=0, sticky='w', columnspan=1)
     
-    version_label = Label(status_bar, text='v1.0.0', anchor=E, padx=5)
-    version_label.grid(column=1, row=0, sticky="e", columnspan=1)
+    #version_label = Label(status_bar, text='v1.0.0', anchor=E, padx=5)
+    #version_label.grid(column=1, row=0, sticky="e", columnspan=1)
 
-    status_bar.columnconfigure(0, weight=1)
+    #status_bar.columnconfigure(0, weight=1)
 
     status_bar.pack(side=BOTTOM, fill=X)
 
-    root.title('disabilitydude')
-    center(root)
-    root.attributes('-alpha', 1.0)
-    root.mainloop()
+    #root.title('disabilitydude')
+    #center(root)
+    #root.attributes('-alpha', 1.0)
+    #root.mainloop()
     return
 
 
 if __name__ == '__main__':
-    main()
+    root = Tk()
+    AppRoot(root)
+    root.mainloop()
