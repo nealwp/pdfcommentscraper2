@@ -7,7 +7,7 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 
-def scanforkeywords(pdf_path):
+def scanforkeywords(pdf_path, app):
     
     with open(r".\\config\\keywords", "r") as keyword_file:
         file_content = keyword_file.read()
@@ -58,9 +58,12 @@ def scanforkeywords(pdf_path):
                                      
             interpreter.process_page(page)
             pge += 1
-            #if pge > 100:
+            
+            #if pge > 99:
             #    break
-            print("processing page [%d]\r"%pge, end="")
+            print(" [%d]\r"%pge, end="")
+            app.set_status(f'Processing page {pge}...')
+            app.update()
             page_text = output_string.getvalue()
             list_text = list(page_text.split(" "))
             list_text = [w.lower() for w in list_text]
@@ -93,6 +96,8 @@ def scanforkeywords(pdf_path):
                     resultCount += 1
             output_string.close()
             
+    app.set_status(f'Done. Pages Scanned: {pge} - Keyword Results: {resultCount}')
+    app.update()
     print('\nfinds: ' + str(resultCount))
     print('done')
     return output

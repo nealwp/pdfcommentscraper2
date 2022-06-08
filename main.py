@@ -8,58 +8,69 @@ from keywordscan import scanforkeywords
 
 from helpers import write_csv, get_file_path, get_save_path
 
-class StatusBar(Frame):
-    
-    def __init__(self, parent, *args, **kwargs):
-        Frame.__init__(self, parent, *args, **kwargs)
-        self.parent = parent
+class App(Tk):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__()
+        #Frame.__init__(self, parent, *args, **kwargs)
+        self.attributes('-alpha', 0.0)
+        self.geometry('809x500')
+        self.title('disabilitydude')
+
+        self.menubar = Menu(self, bd=5)
+
+        self.filemenu = Menu(self.menubar, tearoff=0)
+        self.filemenu.add_command(label="Exit", command=self.destroy)
+        self.menubar.add_cascade(label="File", menu=self.filemenu)
+
+        self.actions_menu = Menu(self.menubar, tearoff=0)
+        self.actions_menu.add_command(label="Scan PDF for Keywords", command=self.run_keyword_scan)
+        self.actions_menu.add_command(label="Scrape Comments from PDF", command=run_commentscraper)
+        self.menubar.add_cascade(label="Actions", menu=self.actions_menu)
         
-        self.status = Label(self.frame, text="Ready", anchor=W, padx=5)
+        self.settingsmenu = Menu(self.menubar, tearoff=0)
+        self.settingsmenu.add_command(label="Keywords", command=lambda: open_keywords_menu())
+        self.settingsmenu.add_command(label="Context Size", command=lambda: open_context_size_menu())
+        self.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
+        
+        self.menubar.add_command(label="Help", command=lambda: self.set_status('you clicked help'))
+        
+        self.config(menu=self.menubar)
+        
+        self.status_bar = Frame(self, bd=1, relief=SUNKEN)
+        
+        self.status = Label(self.status_bar, text='Ready', anchor=W, padx=5)
         self.status.grid(column=0, row=0, sticky='w', columnspan=1)
         
-        self.version = Label(self.frame, text='v1.0.0', anchor=E, padx=5)
+        self.version = Label(self.status_bar, text='v1.0.0', anchor=E, padx=5)
         self.version.grid(column=1, row=0, sticky="e", columnspan=1)
         
-        self.frame.columnconfigure(0, weight=1)
-
-class MenuBar(Frame):
-    def __init__(self, parent, *args, **kwargs) -> None:
-        Frame.__init__(self, parent, *args, **kwargs)
-        self.parent = parent
-        self.parent.menubar = Menu(self.parent, bd=5)
-
-        self.filemenu = Menu(self.parent.menubar, tearoff=0)
-        self.filemenu.add_command(label="Exit", command=parent.destroy)
-        self.parent.menubar.add_cascade(label="File", menu=self.filemenu)
-
-        self.actions_menu = Menu(self.parent.menubar, tearoff=0)
-        self.actions_menu.add_command(label="Scan PDF for Keywords", command=run_keyword_scan)
-        self.actions_menu.add_command(label="Scrape Comments from PDF", command=run_commentscraper)
-        self.parent.menubar.add_cascade(label="Actions", menu=self.actions_menu)
-        
-        self.settingsmenu = Menu(self.parent.menubar, tearoff=0)
-        self.settingsmenu.add_command(label="Keywords", command=lambda: open_keywords_menu(parent))
-        self.settingsmenu.add_command(label="Context Size", command=lambda: open_context_size_menu(parent))
-        self.parent.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
-        
-        self.parent.menubar.add_command(label="Help")
-        
-        self.parent.config(menu=self.parent.menubar)
-
-class AppRoot(Frame):
-    def __init__(self, parent, *args, **kwargs) -> None:
-        Frame.__init__(self, parent, *args, **kwargs)
-        self.parent = parent
-        self.parent.attributes('-alpha', 0.0)
-        self.parent.geometry('809x500')
-        self.parent.title('disabilitydude')
-
-        self.menubar = MenuBar(self.parent)
-        self.status_bar = StatusBar(self.parent, bd=1, relief=SUNKEN)
+        self.status_bar.columnconfigure(0, weight=1)
+        self.status_bar.pack(side=BOTTOM, fill=X)
         
         #self.parent._center()
-        self.parent.attributes('-alpha', 1.0)
+        self.attributes('-alpha', 1.0)
         #self.root.mainloop()
+
+    def set_status(self, message):
+        self.status = Label(self.status_bar, text=message, anchor=W, padx=5)
+        self.status.grid(column=0, row=0, sticky='w', columnspan=1)
+        #self.status = message
+
+    def run_keyword_scan(self):
+
+        fieldnames = ['keyword', 'page', 'text', 'exhibit', 'provider', 'exhibit_page']
+
+        pdf_path = get_file_path()
+        debut = perf_counter()
+        output = scanforkeywords(pdf_path, self)
+        fin = perf_counter()
+        output_path = get_save_path()
+        with open(output_path,'w',encoding='utf-8', newline='') as f:
+            csvdw = DictWriter(f, fieldnames=fieldnames)
+            csvdw.writeheader()
+            csvdw.writerows(output)
+        print(f"Completed in {fin - debut:0.4f}s")
+        return
 
     def _center(self):
         """
@@ -77,6 +88,55 @@ class AppRoot(Frame):
         y = self.root.winfo_screenheight() // 2 - win_height // 2
         self.root.geometry('{}x{}+{}+{}'.format(width, height, x, y))
         self.root.deiconify()
+
+
+class StatusBar(App):
+    
+    def __init__(self):
+        super().__init__()
+        self.parent = parent
+        self.parent.status_bar = Frame(self.parent, bd=1, relief=SUNKEN)
+        
+        self.status = Label(self.parent.status_bar, text='Ready', anchor=W, padx=5)
+        self.status.grid(column=0, row=0, sticky='w', columnspan=1)
+        
+        self.version = Label(self.parent.status_bar, text='v1.0.0', anchor=E, padx=5)
+        self.version.grid(column=1, row=0, sticky="e", columnspan=1)
+        
+        self.parent.status_bar.columnconfigure(0, weight=1)
+        self.parent.status_bar.pack(side=BOTTOM, fill=X)
+
+    def set_status(self, message):
+        self.status = Label(self.parent.status_bar, text=message, anchor=W, padx=5)
+
+class MenuBar(App):
+    def __init__(self) -> None:
+        super().__init__()
+        self.parent = parent
+        self.parent.menubar = Menu(self.parent, bd=5)
+
+        self.filemenu = Menu(self.parent.menubar, tearoff=0)
+        self.filemenu.add_command(label="Exit", command=parent.destroy)
+        self.parent.menubar.add_cascade(label="File", menu=self.filemenu)
+
+        self.actions_menu = Menu(self.parent.menubar, tearoff=0)
+        self.actions_menu.add_command(label="Scan PDF for Keywords", command=run_keyword_scan)
+        self.actions_menu.add_command(label="Scrape Comments from PDF", command=run_commentscraper)
+        self.parent.menubar.add_cascade(label="Actions", menu=self.actions_menu)
+        
+        self.settingsmenu = Menu(self.parent.menubar, tearoff=0)
+        self.settingsmenu.add_command(label="Keywords", command=lambda: open_keywords_menu(parent))
+        self.settingsmenu.add_command(label="Context Size", command=lambda: open_context_size_menu(parent))
+        self.parent.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
+        
+        self.parent.menubar.add_command(label="Help", command=lambda: self.set_status('you clicked help'))
+        
+        self.parent.config(menu=self.parent.menubar)
+
+    def set_app_status(self, message):
+        self.set_status(message)
+
+
 
 def findWholeWord(w):
     return re.compile(r'\b^({0})$\b'.format(w), flags=re.IGNORECASE).search
@@ -273,6 +333,5 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    root = Tk()
-    AppRoot(root)
-    root.mainloop()
+    app = App()
+    app.mainloop()
