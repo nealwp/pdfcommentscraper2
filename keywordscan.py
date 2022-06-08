@@ -2,7 +2,7 @@ from io import StringIO
 
 from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
-from pdfminer.pdfdocument import PDFDocument
+from pdfminer.pdfdocument import PDFDocument, PDFNoOutlines
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
@@ -17,16 +17,20 @@ def scanforkeywords(pdf_path):
     with open(pdf_path, 'rb') as in_file: 
         parser = PDFParser(in_file)
         doc = PDFDocument(parser)
-        outlines = doc.get_outlines()
-        index = 1
-        provider = ''
-        page_metadata = {index: {'provider': '','exhibit_page': ''}}
-        for (level, title, dest, a, se) in outlines:
-            if level == 2:
-                provider = title
-            if level == 3:
-                index += 1
-                page_metadata[index] = {'provider': provider,'exhibit_page': title}
+        try:
+            outlines = doc.get_outlines()
+            index = 1
+            provider = ''
+            page_metadata = {index: {'provider': '','exhibit_page': ''}}
+            for (level, title, dest, a, se) in outlines:
+                if level == 2:
+                    provider = title
+                if level == 3:
+                    index += 1
+                    page_metadata[index] = {'provider': provider,'exhibit_page': title}
+        except PDFNoOutlines as e:
+            page_metadata = {}
+            print('PDF has no outlines to reference.') 
                 
 
         rsrcmgr = PDFResourceManager()
@@ -69,13 +73,20 @@ def scanforkeywords(pdf_path):
                         text_sample_list = list_text[kw_idx:kw_idx+10]
                                           
                     text_sample = ' '.join(text_sample_list).replace('\n', '_')
+                    try:
+                        provider = page_metadata[pge]['provider']
+                        exhibit_page = page_metadata[pge]['exhibit_page']
+                    except KeyError as e:
+                        provider = ''
+                        exhibit_page = ''
+                    
                     pageData = {
                         'keyword': keyword,
                         'page': pge,
                         'text': text_sample,
                         'exhibit': exhibit,
-                        'provider': page_metadata[pge]['provider'],
-                        'exhibit_page': page_metadata[pge]['exhibit_page']
+                        'provider': provider,
+                        'exhibit_page': exhibit_page
                     }
                         
                     output.append(pageData)
