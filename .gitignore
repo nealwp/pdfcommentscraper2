@@ -6,3 +6,8 @@ dist
 build
 *.spec
 *.zip
+*.pdf
+*.jpg
+lib/*
+*.txt
+*.json

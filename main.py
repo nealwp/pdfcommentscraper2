@@ -1,17 +1,23 @@
 import re
 from time import perf_counter
 from csv import writer, DictWriter
-from tkinter import END, Listbox, Scrollbar, StringVar, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X
-
+from tkinter import END, LEFT, Listbox, Scrollbar, StringVar, Text, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X
+from tkinter.ttk import Combobox
+from tkcalendar import Calendar, DateEntry
 from commentscraper import scrape_comments
 from keywordscan import scanforkeywords
+import docx
+from docx.shared import Pt, Inches
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_UNDERLINE
+from docx.enum.style import WD_STYLE_TYPE
+import json
+
 
 from helpers import write_csv, get_file_path, get_save_path
 
 class App(Tk):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
-        #Frame.__init__(self, parent, *args, **kwargs)
         self.attributes('-alpha', 0.0)
         self.geometry('809x500')
         self.title('disabilitydude')
@@ -19,6 +25,8 @@ class App(Tk):
         self.menubar = Menu(self, bd=5)
 
         self.filemenu = Menu(self.menubar, tearoff=0)
+        self.filemenu.add_command(label='New Summary', command=self.open_new_summary_form)
+        self.filemenu.add_command(label='Open Summary')
         self.filemenu.add_command(label="Exit", command=self.destroy)
         self.menubar.add_cascade(label="File", menu=self.filemenu)
 
@@ -28,8 +36,8 @@ class App(Tk):
         self.menubar.add_cascade(label="Actions", menu=self.actions_menu)
         
         self.settingsmenu = Menu(self.menubar, tearoff=0)
-        self.settingsmenu.add_command(label="Keywords", command=lambda: open_keywords_menu())
-        self.settingsmenu.add_command(label="Context Size", command=lambda: open_context_size_menu())
+        self.settingsmenu.add_command(label="Keywords", command=self.open_keywords_menu)
+        self.settingsmenu.add_command(label="Context Size", command=self.open_context_size_menu)
         self.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
         
         self.menubar.add_command(label="Help", command=lambda: self.set_status('you clicked help'))
@@ -47,14 +55,12 @@ class App(Tk):
         self.status_bar.columnconfigure(0, weight=1)
         self.status_bar.pack(side=BOTTOM, fill=X)
         
-        #self.parent._center()
+        self._center()
         self.attributes('-alpha', 1.0)
-        #self.root.mainloop()
 
     def set_status(self, message):
         self.status = Label(self.status_bar, text=message, anchor=W, padx=5)
         self.status.grid(column=0, row=0, sticky='w', columnspan=1)
-        #self.status = message
 
     def run_keyword_scan(self):
 
@@ -72,23 +78,493 @@ class App(Tk):
         print(f"Completed in {fin - debut:0.4f}s")
         return
 
+    def open_keywords_menu(self):
+
+        keywords = read_keywords_file()
+
+        win = Toplevel(self)
+        win.attributes('-alpha', 0.0)
+        win.title('Keywords Settings')
+
+        leftFrame = Frame(win)
+        leftFrame.grid(column=0, row=1)
+
+        entrylabel = Label(leftFrame, text='New Keyword')
+        entrylabel.grid(column=0, row=0, sticky='sw', rowspan=1, padx=10)
+
+        entrybox = Entry(leftFrame, width=24, bd=1)
+        entrybox.grid(column=0, row=1, sticky='nw', rowspan=1, columnspan=1, padx=10)
+
+        addBtn = Button(leftFrame, text='Add', command=lambda: add_keyword(entrybox.get(), entrybox))
+        addBtn.grid(column=0, row=2, pady=10)
+        addBtn.bind("<Enter>", on_enter)
+        addBtn.bind("<Leave>", on_leave)
+
+        rightFrame = Frame(win)
+        rightFrame.grid(column=1, row=1, pady=10)
+        
+        keywordboxlabel = Label(rightFrame, text='Active Keywords')
+        keywordboxlabel.grid(column=0, row=0, sticky='nw', rowspan=1)
+
+        listbox = Listbox(rightFrame, height=16, selectmode='single', activestyle='none')
+        for i, kw in enumerate(keywords):
+            listbox.insert(i, kw)
+
+        listbox.grid(column=0, row=1, sticky='nw')
+
+        scrollbar = Scrollbar(rightFrame, orient='vertical', command=listbox.yview)
+        scrollbar.grid(column=1, row=1, sticky='nsw')
+        listbox['yscrollcommand'] = scrollbar.set
+
+        deleteBtn = Button(rightFrame, text='Delete Selected', command=lambda: delete_keyword(listbox.get(listbox.curselection())))
+        deleteBtn.grid(column=0, row=2, pady=10)
+        deleteBtn.bind("<Enter>", on_enter)
+        deleteBtn.bind("<Leave>", on_leave)
+        
+        doneBtn = Button(win, text='Done', command=win.destroy)
+        doneBtn.bind("<Enter>", on_enter)
+        doneBtn.bind("<Leave>", on_leave)
+        doneBtn.grid(column=0, row=3, columnspan=2, pady=10)
+        center(win)
+        win.attributes('-alpha', 1.0)
+        win.mainloop()
+
+    def open_context_size_menu(self):
+        win = Toplevel(self, padx=15, pady=15)
+        win.attributes('-alpha', 0.0)
+        win.title('Context Size Settings')
+
+        words_minus_label = Label(win, text="Words Before Keyword:")
+        words_minus_label.grid(column=0, row=0, sticky='w', padx=10)
+        
+        words_minus_entry = Entry(win, width=3, bd=1)
+        words_minus_entry.grid(column=1, row=0, sticky='e', padx=10)
+        
+        words_plus_label = Label(win, text="Words After Keyword:")
+        words_plus_label.grid(column=0, row=1, sticky='w', padx=10)
+        
+        words_plus_entry = Entry(win, width=3, bd=1)
+        words_plus_entry.grid(column=1, row=1, sticky='e', padx=10)
+
+        done_btn = Button(win, text='Done', command=win.destroy)
+        done_btn.bind("<Enter>", on_enter)
+        done_btn.bind("<Leave>", on_leave)
+        done_btn.grid(column=0, row=3, columnspan=2)
+        
+        center(win)
+        win.attributes('-alpha', 1.0)
+        win.mainloop()
+    
+    def open_new_summary_form(self):
+        self.summary_form = SummaryForm(self)
+
+    def open_new_summary_form2(self):
+        win = Toplevel(self, padx=15, pady=15)
+        win.attributes('-alpha', 0.0)
+        win.title('New Summary')
+
+        name_label = Label(win, text="Client Name:")
+        name_label.grid(column=0, row=0, sticky='w', padx=10, pady=2)
+        
+        name_entry = Entry(win, bd=1)
+        name_entry.grid(column=1, row=0, sticky='e', padx=10, pady=2)
+        
+        ssn_label = Label(win, text="SSN:")
+        ssn_label.grid(column=0, row=1, sticky='w', padx=10, pady=2)
+        
+        ssn_entry = Entry(win, bd=1)
+        ssn_entry.grid(column=1, row=1, sticky='e', padx=10, pady=2)
+
+        title_label = Label(win, text="Title:")
+        title_label.grid(column=0, row=2, sticky='w', padx=10, pady=2)
+        
+        title_entry = Entry(win, bd=1)
+        title_entry.grid(column=1, row=2, sticky='e', padx=10, pady=2)
+
+        application_date_label = Label(win, text="Application Date:")
+        application_date_label.grid(column=0, row=3, sticky='w', padx=10, pady=2)
+
+        #application_date_entry = Calendar(win, selectmode='day')
+        application_date_entry = Entry(win, bd=1)
+        application_date_entry.grid(column=1, row=3, sticky='e', padx=10, pady=2)
+
+        onset_date_label = Label(win, text="Alleged Onset Date:")
+        onset_date_label.grid(column=0, row=4, sticky='w', padx=10, pady=2)
+
+        onset_date_entry = Entry(win, bd=1)
+        onset_date_entry.grid(column=1, row=4, sticky='e', padx=10, pady=2)
+
+        insured_date_label = Label(win, text="Last Insured Date:")
+        insured_date_label.grid(column=0, row=5, sticky='w', padx=10, pady=2)
+
+        insured_date_entry = Entry(win, bd=1)
+        insured_date_entry.grid(column=1, row=5, sticky='e', padx=10, pady=2)
+
+        prior_label = Label(win, text="Prior Applications?")
+        prior_label.grid(column=0, row=6, sticky='w', padx=10, pady=2)
+
+        prior_txtVar = StringVar()
+        prior_combo = Combobox(win, width=6, textvariable=prior_txtVar, justify='left')
+        prior_combo['values'] = ('No', 'Yes')
+        prior_combo.grid(column=1, row=6, sticky='e', padx=10, pady=2)
+        prior_combo.current(0)
+
+        birthday_label = Label(win, text="Date of Birth:")
+        birthday_label.grid(column=0, row=7, sticky='w', padx=10, pady=2)
+
+        birthday_entry = Entry(win, bd=1)
+        birthday_entry.grid(column=1, row=7, sticky='e', padx=10, pady=2)
+
+        education_label = Label(win, text="Education:")
+        education_label.grid(column=0, row=8, sticky='w', padx=10, pady=2)
+
+        education_entry = Entry(win, bd=1)
+        education_entry.grid(column=1, row=8, sticky='e', padx=10, pady=2)
+
+        drugs_label = Label(win, text="Drug Use?")
+        drugs_label.grid(column=0, row=9, sticky='w', padx=10, pady=2)
+
+        drugs_txtVar = StringVar()
+        drugs_combo = Combobox(win, width=6, textvariable=drugs_txtVar, justify='left')
+        drugs_combo['values'] = ('No', 'Yes')
+        drugs_combo.grid(column=1, row=9, sticky='e', padx=10, pady=2)
+        drugs_combo.current(0)
+
+        criminal_label = Label(win, text="Criminal History?")
+        criminal_label.grid(column=0, row=10, sticky='w', padx=10, pady=2)
+
+        criminal_txtVar = StringVar()
+        criminal_combo = Combobox(win, width=6, textvariable=criminal_txtVar, justify='left')
+        criminal_combo['values'] = ('No', 'Yes')
+        criminal_combo.grid(column=1, row=10, sticky='e', padx=10, pady=2)
+        criminal_combo.current(0)
+
+        overview_label = Label(win, text="Case Overview:")
+        overview_label.grid(column=0, row=11, sticky='w', padx=10, pady=2)
+
+        overview_text = Text(win, height=6, font='Calibri', wrap='word')
+        overview_text.grid(column=0, row=12, columnspan=4, rowspan=2, padx=10, pady=2)
+
+        add_work_history_btn = Button(win, text="Add Work History", command=self.open_work_history_form)
+        add_work_history_btn.bind("<Enter>", on_enter)
+        add_work_history_btn.bind("<Leave>", on_leave)
+        add_work_history_btn.grid(column=2, row=0, columnspan=2, rowspan=10)
+
+        done_btn = Button(win, text='Done', command=win.destroy)
+        done_btn.bind("<Enter>", on_enter)
+        done_btn.bind("<Leave>", on_leave)
+        done_btn.grid(column=0, row=99, columnspan=4, pady=4)
+        
+        center(win)
+        win.attributes('-alpha', 1.0)
+        win.mainloop()
+        return
+
+    def open_work_history_form(self):
+        win = Toplevel(self, padx=15, pady=15)
+        win.attributes('-alpha', 0.0)
+        win.title('Work History')
+
+        job_title_label = Label(win, text="Job Title")
+        job_title_label.grid(column=0, row=0, padx=10, pady=2, sticky='w')
+
+        job_title_entry = Entry(win, bd=1)
+        job_title_entry.grid(column=0, row=1, padx=10, pady=2)
+
+        intensity_label = Label(win, text="Intensity")
+        intensity_label.grid(column=1, row=0, padx=10, pady=2, sticky='w')
+
+        intensity_txtVar = StringVar()
+        intensity_combo = Combobox(win, textvariable=intensity_txtVar, justify='left')
+        intensity_combo['values'] = ('Light', 'Medium', 'Heavy')
+        intensity_combo.grid(column=1, row=1, padx=10, pady=2)
+        intensity_combo.current(0)
+
+        skill_level_label = Label(win, text="Skill Level")
+        skill_level_label.grid(column=2, row=0, padx=10, pady=2, sticky='w')
+
+        skill_level_txtVar = StringVar()
+        skill_level_combo = Combobox(win, textvariable=skill_level_txtVar, justify='left')
+        skill_level_combo['values'] = ('Unskilled', 'Semi-Skilled', 'Skilled')
+        skill_level_combo.grid(column=2, row=1, padx=10, pady=2)
+        skill_level_combo.current(0)
+
+        add_entry_btn = Button(win, text='Add')
+        add_entry_btn.grid(column=3, row=1, padx=10, pady=2)
+
+        center(win)
+        win.attributes('-alpha', 1.0)
+        win.mainloop()
+
     def _center(self):
         """
         centers a tkinter window
         :param win: the main window or Toplevel window to center
         """
-        self.root.update_idletasks()
-        width = self.root.winfo_width()
-        frm_width = self.root.winfo_rootx() - self.root.winfo_x()
+        self.update_idletasks()
+        width = self.winfo_width()
+        frm_width = self.winfo_rootx() - self.winfo_x()
         win_width = width + 2 * frm_width
-        height = self.root.winfo_height()
-        titlebar_height = self.root.winfo_rooty() - self.root.winfo_y()
+        height = self.winfo_height()
+        titlebar_height = self.winfo_rooty() - self.winfo_y()
         win_height = height + titlebar_height + frm_width
-        x = self.root.winfo_screenwidth() // 2 - win_width // 2
-        y = self.root.winfo_screenheight() // 2 - win_height // 2
-        self.root.geometry('{}x{}+{}+{}'.format(width, height, x, y))
-        self.root.deiconify()
+        x = self.winfo_screenwidth() // 2 - win_width // 2
+        y = self.winfo_screenheight() // 2 - win_height // 2
+        self.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+        self.deiconify()
 
+class SummaryForm(Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent, padx=15, pady=15)
+        self.parent = parent
+        self.work_history = []
+        self.attributes('-alpha', 0.0)
+        self.title('New Summary')
+        self.name_label = Label(self, text="Client Name:")
+        self.name_label.grid(column=0, row=0, sticky='w', padx=10, pady=2)
+        
+        self.name_entry = Entry(self, bd=1)
+        self.name_entry.grid(column=1, row=0, sticky='e', padx=10, pady=2)
+        
+        self.ssn_label = Label(self, text="SSN:")
+        self.ssn_label.grid(column=0, row=1, sticky='w', padx=10, pady=2)
+        
+        self.ssn_entry = Entry(self, bd=1)
+        self.ssn_entry.grid(column=1, row=1, sticky='e', padx=10, pady=2)
+
+        self.title_label = Label(self, text="Title:")
+        self.title_label.grid(column=0, row=2, sticky='w', padx=10, pady=2)
+        
+        self.title_entry = Entry(self, bd=1)
+        self.title_entry.grid(column=1, row=2, sticky='e', padx=10, pady=2)
+
+        self.application_date_label = Label(self, text="Application Date:")
+        self.application_date_label.grid(column=0, row=3, sticky='w', padx=10, pady=2)
+
+        #application_date_entry = Calendar(win, selectmode='day')
+        self.application_date_entry = Entry(self, bd=1)
+        self.application_date_entry.grid(column=1, row=3, sticky='e', padx=10, pady=2)
+
+        self.onset_date_label = Label(self, text="Alleged Onset Date:")
+        self.onset_date_label.grid(column=0, row=4, sticky='w', padx=10, pady=2)
+
+        self.onset_date_entry = Entry(self, bd=1)
+        self.onset_date_entry.grid(column=1, row=4, sticky='e', padx=10, pady=2)
+
+        self.insured_date_label = Label(self, text="Last Insured Date:")
+        self.insured_date_label.grid(column=0, row=5, sticky='w', padx=10, pady=2)
+
+        self.insured_date_entry = Entry(self, bd=1)
+        self.insured_date_entry.grid(column=1, row=5, sticky='e', padx=10, pady=2)
+
+        self.prior_label = Label(self, text="Prior Applications?")
+        self.prior_label.grid(column=0, row=6, sticky='w', padx=10, pady=2)
+
+        self.prior_txtVar = StringVar()
+        self.prior_combo = Combobox(self, width=6, textvariable=self.prior_txtVar, justify='left')
+        self.prior_combo['values'] = ('No', 'Yes')
+        self.prior_combo.grid(column=1, row=6, sticky='e', padx=10, pady=2)
+        self.prior_combo.current(0)
+
+        self.birthday_label = Label(self, text="Date of Birth:")
+        self.birthday_label.grid(column=0, row=7, sticky='w', padx=10, pady=2)
+
+        self.birthday_entry = Entry(self, bd=1)
+        self.birthday_entry.grid(column=1, row=7, sticky='e', padx=10, pady=2)
+
+        self.education_label = Label(self, text="Education:")
+        self.education_label.grid(column=0, row=8, sticky='w', padx=10, pady=2)
+
+        self.education_entry = Entry(self, bd=1)
+        self.education_entry.grid(column=1, row=8, sticky='e', padx=10, pady=2)
+
+        self.drugs_label = Label(self, text="Drug Use?")
+        self.drugs_label.grid(column=0, row=9, sticky='w', padx=10, pady=2)
+
+        self.drugs_txtVar = StringVar()
+        self.drugs_combo = Combobox(self, width=6, textvariable=self.drugs_txtVar, justify='left')
+        self.drugs_combo['values'] = ('No', 'Yes')
+        self.drugs_combo.grid(column=1, row=9, sticky='e', padx=10, pady=2)
+        self.drugs_combo.current(0)
+
+        self.criminal_label = Label(self, text="Criminal History?")
+        self.criminal_label.grid(column=0, row=10, sticky='w', padx=10, pady=2)
+
+        self.criminal_txtVar = StringVar()
+        self.criminal_combo = Combobox(self, width=6, textvariable=self.criminal_txtVar, justify='left')
+        self.criminal_combo['values'] = ('No', 'Yes')
+        self.criminal_combo.grid(column=1, row=10, sticky='e', padx=10, pady=2)
+        self.criminal_combo.current(0)
+
+        self.overview_label = Label(self, text="Case Overview:")
+        self.overview_label.grid(column=0, row=11, sticky='w', padx=10, pady=2)
+
+        self.overview_text = Text(self, height=6, font='Calibri', wrap='word')
+        self.overview_text.grid(column=0, row=12, columnspan=4, rowspan=2, padx=10, pady=2)
+
+        self.add_work_history_btn = Button(self, text="Add Work History", command=self._open_work_history_form)
+        self.add_work_history_btn.bind("<Enter>", on_enter)
+        self.add_work_history_btn.bind("<Leave>", on_leave)
+        self.add_work_history_btn.grid(column=2, row=0, columnspan=2, rowspan=10)
+
+        done_btn = Button(self, text='Done', command=self._save_to_file)
+        done_btn.bind("<Enter>", on_enter)
+        done_btn.bind("<Leave>", on_leave)
+        done_btn.grid(column=0, row=99, columnspan=4, pady=4)
+
+        center(self)
+        self.attributes('-alpha', 1.0)
+        self.mainloop()
+
+    def _open_work_history_form(self):
+        self.work_history_form = WorkHistoryForm(self)
+
+    def _save_to_file(self):
+        
+        client_name = self.name_entry.get()
+        client_ssn = self.ssn_entry.get()
+        title = self.title_entry.get()
+        application_date = self.application_date_entry.get()
+        onset_date = self.onset_date_entry.get()
+        insured_date = self.insured_date_entry.get()
+        prior_applications = self.prior_txtVar.get()
+        birthdate = self.birthday_entry.get()
+        education = self.education_entry.get()
+        work_history = []
+        drug_use = self.drugs_txtVar.get()
+        criminal_history = self.criminal_txtVar.get()
+        overview = self.overview_text.get('1.0', 'end-1c')
+
+        data = {
+            'client_name': client_name,
+            'client_ssn': client_ssn,
+            'title': title,
+            'application_date': application_date,
+            'onset_date': onset_date,
+            'insured_date': insured_date,
+            'prior_applications': prior_applications,
+            'birthdate': birthdate,
+            'education': education,
+            'work_history': work_history,
+            'drug_use': drug_use,
+            'criminal_history': criminal_history,
+            'overview': overview
+        }
+
+        print(data)
+
+        doc = docx.Document()
+
+        style = doc.styles['Normal']
+        font = style.font
+        font.name = 'Calibri'
+
+        style = doc.styles.add_style('Normal 2', WD_STYLE_TYPE.PARAGRAPH)
+        font = style.font
+        font.name = 'Arial Narrow'
+        font.size = Pt(16)
+        font.underline = True
+        font.bold = True
+        font.color.rgb = None 
+
+        doc.add_paragraph(f'CLIENT NAME\t\t\t{data["client_name"]}')
+        doc.add_paragraph(f'CLIENT SSN\t\t\t{data["client_ssn"]}\n')
+ 
+        doc.add_paragraph(f'TITLE\t\t\t\t{data["title"]}')
+        doc.add_paragraph(f'APPLICATION DATE\t\t{data["application_date"]}')
+        doc.add_paragraph(f'ALLEGED ONSET DATE\t\t{data["onset_date"]}')
+        doc.add_paragraph(f'DATE LAST INSURED\t\t{data["insured_date"]}')
+        doc.add_paragraph(f'PRIOR APPLICATIONS?\t\t{data["prior_applications"]}')
+        doc.add_paragraph(f'DOB\t\t\t\t{data["birthdate"]}\n')
+
+        doc.add_paragraph(f'EDUCATION\t\t\t{data["education"]}')
+        doc.add_paragraph("WORK HX")
+ 
+        doc.add_paragraph(f'DRUG USE\t\t\t{data["drug_use"]}')
+        doc.add_paragraph(f'CRIMINAL HX\t\t\t{data["criminal_history"]}\n')
+
+ 
+        doc.add_paragraph(f'{data["overview"]}\n')
+        
+        for paragraph in doc.paragraphs:
+            paragraph.paragraph_format.space_after = Pt(0)
+            paragraph.style = doc.styles['Normal']
+
+        para = doc.add_paragraph('MEDICAL EVIDENCE AND NOTES')
+        para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        para.style = doc.styles['Normal 2']
+
+        for section in doc.sections:
+            section.left_margin = Inches(1)
+            section.right_margin = Inches(1)
+            section.top_margin = Inches(1)
+            section.bottom_margin = Inches(1)
+
+        output_path = get_save_path('docx')
+        doc.save(output_path)
+
+        self.parent.set_status('Data Saved')
+        self.destroy()
+        return
+
+class WorkHistoryForm(Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent, padx=15, pady=15)
+        self.parent = parent
+        self.attributes('-alpha', 0.0)
+        self.title('Work History')
+
+        self.job_title_label = Label(self, text="Job Title")
+        self.job_title_label.grid(column=0, row=0, padx=10, pady=2, sticky='w')
+
+        self.job_title_entry = Entry(self, bd=1)
+        self.job_title_entry.grid(column=0, row=1, padx=10, pady=2)
+
+        self.intensity_label = Label(self, text="Intensity")
+        self.intensity_label.grid(column=1, row=0, padx=10, pady=2, sticky='w')
+
+        self.intensity_txtVar = StringVar()
+        self.intensity_combo = Combobox(self, textvariable=self.intensity_txtVar, justify='left')
+        self.intensity_combo['values'] = ('Light', 'Medium', 'Heavy')
+        self.intensity_combo.grid(column=1, row=1, padx=10, pady=2)
+        self.intensity_combo.current(0)
+
+        self.skill_level_label = Label(self, text="Skill Level")
+        self.skill_level_label.grid(column=2, row=0, padx=10, pady=2, sticky='w')
+
+        self.skill_level_txtVar = StringVar()
+        self.skill_level_combo = Combobox(self, textvariable=self.skill_level_txtVar, justify='left')
+        self.skill_level_combo['values'] = ('Unskilled', 'Semi-Skilled', 'Skilled')
+        self.skill_level_combo.grid(column=2, row=1, padx=10, pady=2)
+        self.skill_level_combo.current(0)
+
+        self.add_entry_btn = Button(self, text='Add', command=self._add_entry)
+        self.add_entry_btn.grid(column=3, row=1, padx=10, pady=2)
+
+        self.work_history_frame = Frame(self)
+        self.work_history_frame.grid(column=0, row=2, columnspan=3)
+        self._paint_work_history()
+
+        center(self)
+        self.attributes('-alpha', 1.0)
+        self.mainloop()
+    
+    def _paint_work_history(self):
+        for i, entry in enumerate(self.parent.work_history, start=1):
+            entry_text = f'{i}. {entry["job_title"]} : {entry["intensity"]} : {entry["skill_level"]}'
+            Label(self.work_history_frame, text=entry_text).pack(expand=True)
+            #label.grid(column=0, row=i+1, padx=10, pady=2, sticky='w')
+
+    def _add_entry(self):
+        entry = {
+            'job_title': self.job_title_entry.get(),
+            'intensity': self.intensity_txtVar.get(),
+            'skill_level': self.skill_level_txtVar.get()
+        }
+
+        self.parent.work_history.append(entry)
+        self._paint_work_history()
+        self.mainloop()
 
 class StatusBar(App):
     
@@ -135,7 +611,6 @@ class MenuBar(App):
 
     def set_app_status(self, message):
         self.set_status(message)
-
 
 
 def findWholeWord(w):
@@ -207,130 +682,6 @@ def center(win):
     y = win.winfo_screenheight() // 2 - win_height // 2
     win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
     win.deiconify()
-
-def open_keywords_menu(root):
-
-    keywords = read_keywords_file()
-
-    win = Toplevel(root)
-    win.attributes('-alpha', 0.0)
-    win.title('Keywords Settings')
-
-    leftFrame = Frame(win)
-    leftFrame.grid(column=0, row=1)
-
-    entrylabel = Label(leftFrame, text='New Keyword')
-    entrylabel.grid(column=0, row=0, sticky='sw', rowspan=1, padx=10)
-
-    entrybox = Entry(leftFrame, width=24, bd=1)
-    entrybox.grid(column=0, row=1, sticky='nw', rowspan=1, columnspan=1, padx=10)
-
-    addBtn = Button(leftFrame, text='Add', command=lambda: add_keyword(entrybox.get(), entrybox))
-    addBtn.grid(column=0, row=2, pady=10)
-    addBtn.bind("<Enter>", on_enter)
-    addBtn.bind("<Leave>", on_leave)
-
-    rightFrame = Frame(win)
-    rightFrame.grid(column=1, row=1, pady=10)
-    
-    keywordboxlabel = Label(rightFrame, text='Active Keywords')
-    keywordboxlabel.grid(column=0, row=0, sticky='nw', rowspan=1)
-
-    listbox = Listbox(rightFrame, height=16, selectmode='single', activestyle='none')
-    for i, kw in enumerate(keywords):
-        listbox.insert(i, kw)
-
-    listbox.grid(column=0, row=1, sticky='nw')
-
-    scrollbar = Scrollbar(rightFrame, orient='vertical', command=listbox.yview)
-    scrollbar.grid(column=1, row=1, sticky='nsw')
-    listbox['yscrollcommand'] = scrollbar.set
-
-    deleteBtn = Button(rightFrame, text='Delete Selected', command=lambda: delete_keyword(listbox.get(listbox.curselection())))
-    deleteBtn.grid(column=0, row=2, pady=10)
-    deleteBtn.bind("<Enter>", on_enter)
-    deleteBtn.bind("<Leave>", on_leave)
-    
-    doneBtn = Button(win, text='Done', command=win.destroy)
-    doneBtn.bind("<Enter>", on_enter)
-    doneBtn.bind("<Leave>", on_leave)
-    doneBtn.grid(column=0, row=3, columnspan=2, pady=10)
-    center(win)
-    win.attributes('-alpha', 1.0)
-    win.mainloop()
-
-def open_context_size_menu(root):
-    win = Toplevel(root, padx=15, pady=15)
-    win.attributes('-alpha', 0.0)
-    win.title('Context Size Settings')
-
-    words_minus_label = Label(win, text="Words Before Keyword:")
-    words_minus_label.grid(column=0, row=0, sticky='w', padx=10)
-    
-    words_minus_entry = Entry(win, width=3, bd=1)
-    words_minus_entry.grid(column=1, row=0, sticky='e', padx=10)
-    
-    words_plus_label = Label(win, text="Words After Keyword:")
-    words_plus_label.grid(column=0, row=1, sticky='w', padx=10)
-    
-    words_plus_entry = Entry(win, width=3, bd=1)
-    words_plus_entry.grid(column=1, row=1, sticky='e', padx=10)
-
-    done_btn = Button(win, text='Done', command=win.destroy)
-    done_btn.bind("<Enter>", on_enter)
-    done_btn.bind("<Leave>", on_leave)
-    done_btn.grid(column=0, row=3, columnspan=2)
-    
-    center(win)
-    win.attributes('-alpha', 1.0)
-    win.mainloop()
-    return
-
-def main() -> None:
-
-    root = AppRoot()
-
-    #root = Tk()
-    #root.attributes('-alpha', 0.0)
-    #root.geometry('809x500')
-    """ menu bar setup """
-    menubar = Menu(root, bd=5)
-    filemenu = Menu(menubar, tearoff=0)
-    filemenu.add_command(label="Exit", command=root.destroy)
-    menubar.add_cascade(label="File", menu=filemenu)
-    
-    actions_menu = Menu(menubar, tearoff=0)
-    actions_menu.add_command(label="Scan PDF for Keywords", command=run_keyword_scan)
-    actions_menu.add_command(label="Scrape Comments from PDF", command=run_commentscraper)
-    menubar.add_cascade(label="Actions", menu=actions_menu)
-
-    settingsmenu = Menu(menubar, tearoff=0)
-    settingsmenu.add_command(label="Keywords", command=lambda: open_keywords_menu(root))
-    settingsmenu.add_command(label="Context Size", command=lambda: open_context_size_menu(root))
-    menubar.add_cascade(label="Settings", menu=settingsmenu)
-
-    menubar.add_command(label="Help")
-    
-    root.config(menu=menubar)
-
-    status_bar = StatusBar(root)
-    
-    #status_message = Label(status_bar, text="Ready", anchor=W, padx=5)
-    #status_message.grid(column=0, row=0, sticky='w', columnspan=1)
-    
-    #version_label = Label(status_bar, text='v1.0.0', anchor=E, padx=5)
-    #version_label.grid(column=1, row=0, sticky="e", columnspan=1)
-
-    #status_bar.columnconfigure(0, weight=1)
-
-    status_bar.pack(side=BOTTOM, fill=X)
-
-    #root.title('disabilitydude')
-    #center(root)
-    #root.attributes('-alpha', 1.0)
-    #root.mainloop()
-    return
-
 
 if __name__ == '__main__':
     app = App()
