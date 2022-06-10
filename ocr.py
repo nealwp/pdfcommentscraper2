@@ -12,7 +12,7 @@ from helpers import strip_non_printable_chars
 import json
   
 # Path of the pdf
-PDF_file = "d.pdf"
+PDF_file = "h.pdf"
 image_preprocessing_enabled = False  
 # Store all the pages of the PDF in a variable
 with tempfile.TemporaryDirectory() as path:
@@ -30,7 +30,7 @@ with tempfile.TemporaryDirectory() as path:
         image_counter = image_counter + 1
 
     filelimit = image_counter-1
-    outfile = "out_text.txt"
+    outfile = "out_text_1_page.txt"
 
     pytesseract.tesseract_cmd = r".\\lib\\Tesseract-OCR\\tesseract.exe"
     

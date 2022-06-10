@@ -23,7 +23,7 @@ def write_csv(file_name: str, heads: list, rows: list) -> None:
 
 def get_file_path() -> str:
     """ Displays open dialog and returns a file path """
-    Tk().withdraw()
+    #Tk().withdraw()
     file_path = askopenfilename(filetypes=[("PDF files", "*.pdf")])
     return file_path
 
@@ -42,6 +42,6 @@ def get_save_path(file_type) -> str:
     return save_path
 
 def strip_non_printable_chars(str) -> str:
-    fixed = sub('[^A-Za-z0-9\.\,\!\:\;\(\)\'\"\\n]+', ' ', str)
+    fixed = sub('[^A-Za-z0-9\.\,\!\:\;\(\)\'\"\\n\-\/]+', ' ', str)
     #fixed = ''.join(filter(lambda x: x in printable, str))
     return fixed

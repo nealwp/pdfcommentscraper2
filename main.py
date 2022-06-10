@@ -1,11 +1,12 @@
+from pydoc import cli
 import re
 from time import perf_counter
 from csv import writer, DictWriter
-from tkinter import END, LEFT, Listbox, Scrollbar, StringVar, Text, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X
+from tkinter import BOTH, END, LEFT, LabelFrame, Listbox, Scrollbar, StringVar, Text, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X
 from tkinter.ttk import Combobox
 from tkcalendar import Calendar, DateEntry
 from commentscraper import scrape_comments
-from keywordscan import scanforkeywords
+from pdfscanner import scanforkeywords, scan_for_client_info
 import docx
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_UNDERLINE
@@ -158,144 +159,6 @@ class App(Tk):
     def open_new_summary_form(self):
         self.summary_form = SummaryForm(self)
 
-    def open_new_summary_form2(self):
-        win = Toplevel(self, padx=15, pady=15)
-        win.attributes('-alpha', 0.0)
-        win.title('New Summary')
-
-        name_label = Label(win, text="Client Name:")
-        name_label.grid(column=0, row=0, sticky='w', padx=10, pady=2)
-        
-        name_entry = Entry(win, bd=1)
-        name_entry.grid(column=1, row=0, sticky='e', padx=10, pady=2)
-        
-        ssn_label = Label(win, text="SSN:")
-        ssn_label.grid(column=0, row=1, sticky='w', padx=10, pady=2)
-        
-        ssn_entry = Entry(win, bd=1)
-        ssn_entry.grid(column=1, row=1, sticky='e', padx=10, pady=2)
-
-        title_label = Label(win, text="Title:")
-        title_label.grid(column=0, row=2, sticky='w', padx=10, pady=2)
-        
-        title_entry = Entry(win, bd=1)
-        title_entry.grid(column=1, row=2, sticky='e', padx=10, pady=2)
-
-        application_date_label = Label(win, text="Application Date:")
-        application_date_label.grid(column=0, row=3, sticky='w', padx=10, pady=2)
-
-        #application_date_entry = Calendar(win, selectmode='day')
-        application_date_entry = Entry(win, bd=1)
-        application_date_entry.grid(column=1, row=3, sticky='e', padx=10, pady=2)
-
-        onset_date_label = Label(win, text="Alleged Onset Date:")
-        onset_date_label.grid(column=0, row=4, sticky='w', padx=10, pady=2)
-
-        onset_date_entry = Entry(win, bd=1)
-        onset_date_entry.grid(column=1, row=4, sticky='e', padx=10, pady=2)
-
-        insured_date_label = Label(win, text="Last Insured Date:")
-        insured_date_label.grid(column=0, row=5, sticky='w', padx=10, pady=2)
-
-        insured_date_entry = Entry(win, bd=1)
-        insured_date_entry.grid(column=1, row=5, sticky='e', padx=10, pady=2)
-
-        prior_label = Label(win, text="Prior Applications?")
-        prior_label.grid(column=0, row=6, sticky='w', padx=10, pady=2)
-
-        prior_txtVar = StringVar()
-        prior_combo = Combobox(win, width=6, textvariable=prior_txtVar, justify='left')
-        prior_combo['values'] = ('No', 'Yes')
-        prior_combo.grid(column=1, row=6, sticky='e', padx=10, pady=2)
-        prior_combo.current(0)
-
-        birthday_label = Label(win, text="Date of Birth:")
-        birthday_label.grid(column=0, row=7, sticky='w', padx=10, pady=2)
-
-        birthday_entry = Entry(win, bd=1)
-        birthday_entry.grid(column=1, row=7, sticky='e', padx=10, pady=2)
-
-        education_label = Label(win, text="Education:")
-        education_label.grid(column=0, row=8, sticky='w', padx=10, pady=2)
-
-        education_entry = Entry(win, bd=1)
-        education_entry.grid(column=1, row=8, sticky='e', padx=10, pady=2)
-
-        drugs_label = Label(win, text="Drug Use?")
-        drugs_label.grid(column=0, row=9, sticky='w', padx=10, pady=2)
-
-        drugs_txtVar = StringVar()
-        drugs_combo = Combobox(win, width=6, textvariable=drugs_txtVar, justify='left')
-        drugs_combo['values'] = ('No', 'Yes')
-        drugs_combo.grid(column=1, row=9, sticky='e', padx=10, pady=2)
-        drugs_combo.current(0)
-
-        criminal_label = Label(win, text="Criminal History?")
-        criminal_label.grid(column=0, row=10, sticky='w', padx=10, pady=2)
-
-        criminal_txtVar = StringVar()
-        criminal_combo = Combobox(win, width=6, textvariable=criminal_txtVar, justify='left')
-        criminal_combo['values'] = ('No', 'Yes')
-        criminal_combo.grid(column=1, row=10, sticky='e', padx=10, pady=2)
-        criminal_combo.current(0)
-
-        overview_label = Label(win, text="Case Overview:")
-        overview_label.grid(column=0, row=11, sticky='w', padx=10, pady=2)
-
-        overview_text = Text(win, height=6, font='Calibri', wrap='word')
-        overview_text.grid(column=0, row=12, columnspan=4, rowspan=2, padx=10, pady=2)
-
-        add_work_history_btn = Button(win, text="Add Work History", command=self.open_work_history_form)
-        add_work_history_btn.bind("<Enter>", on_enter)
-        add_work_history_btn.bind("<Leave>", on_leave)
-        add_work_history_btn.grid(column=2, row=0, columnspan=2, rowspan=10)
-
-        done_btn = Button(win, text='Done', command=win.destroy)
-        done_btn.bind("<Enter>", on_enter)
-        done_btn.bind("<Leave>", on_leave)
-        done_btn.grid(column=0, row=99, columnspan=4, pady=4)
-        
-        center(win)
-        win.attributes('-alpha', 1.0)
-        win.mainloop()
-        return
-
-    def open_work_history_form(self):
-        win = Toplevel(self, padx=15, pady=15)
-        win.attributes('-alpha', 0.0)
-        win.title('Work History')
-
-        job_title_label = Label(win, text="Job Title")
-        job_title_label.grid(column=0, row=0, padx=10, pady=2, sticky='w')
-
-        job_title_entry = Entry(win, bd=1)
-        job_title_entry.grid(column=0, row=1, padx=10, pady=2)
-
-        intensity_label = Label(win, text="Intensity")
-        intensity_label.grid(column=1, row=0, padx=10, pady=2, sticky='w')
-
-        intensity_txtVar = StringVar()
-        intensity_combo = Combobox(win, textvariable=intensity_txtVar, justify='left')
-        intensity_combo['values'] = ('Light', 'Medium', 'Heavy')
-        intensity_combo.grid(column=1, row=1, padx=10, pady=2)
-        intensity_combo.current(0)
-
-        skill_level_label = Label(win, text="Skill Level")
-        skill_level_label.grid(column=2, row=0, padx=10, pady=2, sticky='w')
-
-        skill_level_txtVar = StringVar()
-        skill_level_combo = Combobox(win, textvariable=skill_level_txtVar, justify='left')
-        skill_level_combo['values'] = ('Unskilled', 'Semi-Skilled', 'Skilled')
-        skill_level_combo.grid(column=2, row=1, padx=10, pady=2)
-        skill_level_combo.current(0)
-
-        add_entry_btn = Button(win, text='Add')
-        add_entry_btn.grid(column=3, row=1, padx=10, pady=2)
-
-        center(win)
-        win.attributes('-alpha', 1.0)
-        win.mainloop()
-
     def _center(self):
         """
         centers a tkinter window
@@ -320,92 +183,102 @@ class SummaryForm(Toplevel):
         self.work_history = []
         self.attributes('-alpha', 0.0)
         self.title('New Summary')
-        self.name_label = Label(self, text="Client Name:")
-        self.name_label.grid(column=0, row=0, sticky='w', padx=10, pady=2)
         
-        self.name_entry = Entry(self, bd=1)
-        self.name_entry.grid(column=1, row=0, sticky='e', padx=10, pady=2)
+        self.detect_client_btn = Button(self, text="Detect Client Info", command=self._detect_client_info)
+        self.detect_client_btn.bind("<Enter>", on_enter)
+        self.detect_client_btn.bind("<Leave>", on_leave)
+        self.detect_client_btn.grid(column=0, row=0, columnspan=2, sticky='w', padx=10, pady=2)
+
+        self.name_label = Label(self, text="Client Name:")
+        self.name_label.grid(column=0, row=1, sticky='w', padx=10, pady=2)
+        
+        self.name_entry = Entry(self, bd=1, width=32)
+        self.name_entry.grid(column=1, row=1, sticky='e', padx=10, pady=2)
         
         self.ssn_label = Label(self, text="SSN:")
-        self.ssn_label.grid(column=0, row=1, sticky='w', padx=10, pady=2)
+        self.ssn_label.grid(column=0, row=2, sticky='w', padx=10, pady=2)
         
-        self.ssn_entry = Entry(self, bd=1)
-        self.ssn_entry.grid(column=1, row=1, sticky='e', padx=10, pady=2)
+        self.ssn_entry = Entry(self, bd=1, width=32)
+        self.ssn_entry.grid(column=1, row=2, sticky='e', padx=10, pady=2)
 
         self.title_label = Label(self, text="Title:")
-        self.title_label.grid(column=0, row=2, sticky='w', padx=10, pady=2)
+        self.title_label.grid(column=0, row=3, sticky='w', padx=10, pady=2)
         
-        self.title_entry = Entry(self, bd=1)
-        self.title_entry.grid(column=1, row=2, sticky='e', padx=10, pady=2)
+        self.title_entry = Entry(self, bd=1, width=32)
+        self.title_entry.grid(column=1, row=3, sticky='e', padx=10, pady=2)
 
         self.application_date_label = Label(self, text="Application Date:")
-        self.application_date_label.grid(column=0, row=3, sticky='w', padx=10, pady=2)
+        self.application_date_label.grid(column=0, row=4, sticky='w', padx=10, pady=2)
 
         #application_date_entry = Calendar(win, selectmode='day')
-        self.application_date_entry = Entry(self, bd=1)
-        self.application_date_entry.grid(column=1, row=3, sticky='e', padx=10, pady=2)
+        self.application_date_entry = Entry(self, bd=1, width=32)
+        self.application_date_entry.grid(column=1, row=4, sticky='e', padx=10, pady=2)
 
         self.onset_date_label = Label(self, text="Alleged Onset Date:")
-        self.onset_date_label.grid(column=0, row=4, sticky='w', padx=10, pady=2)
+        self.onset_date_label.grid(column=0, row=5, sticky='w', padx=10, pady=2)
 
-        self.onset_date_entry = Entry(self, bd=1)
-        self.onset_date_entry.grid(column=1, row=4, sticky='e', padx=10, pady=2)
+        self.onset_date_entry = Entry(self, bd=1, width=32)
+        self.onset_date_entry.grid(column=1, row=5, sticky='e', padx=10, pady=2)
 
         self.insured_date_label = Label(self, text="Last Insured Date:")
-        self.insured_date_label.grid(column=0, row=5, sticky='w', padx=10, pady=2)
+        self.insured_date_label.grid(column=0, row=6, sticky='w', padx=10, pady=2)
 
-        self.insured_date_entry = Entry(self, bd=1)
-        self.insured_date_entry.grid(column=1, row=5, sticky='e', padx=10, pady=2)
+        self.insured_date_entry = Entry(self, bd=1, width=32)
+        self.insured_date_entry.grid(column=1, row=6, sticky='e', padx=10, pady=2)
 
         self.prior_label = Label(self, text="Prior Applications?")
-        self.prior_label.grid(column=0, row=6, sticky='w', padx=10, pady=2)
+        self.prior_label.grid(column=0, row=7, sticky='w', padx=10, pady=2)
 
         self.prior_txtVar = StringVar()
         self.prior_combo = Combobox(self, width=6, textvariable=self.prior_txtVar, justify='left')
         self.prior_combo['values'] = ('No', 'Yes')
-        self.prior_combo.grid(column=1, row=6, sticky='e', padx=10, pady=2)
+        self.prior_combo.grid(column=1, row=7, sticky='e', padx=10, pady=2)
         self.prior_combo.current(0)
 
         self.birthday_label = Label(self, text="Date of Birth:")
-        self.birthday_label.grid(column=0, row=7, sticky='w', padx=10, pady=2)
+        self.birthday_label.grid(column=0, row=8, sticky='w', padx=10, pady=2)
 
-        self.birthday_entry = Entry(self, bd=1)
-        self.birthday_entry.grid(column=1, row=7, sticky='e', padx=10, pady=2)
+        self.birthday_entry = Entry(self, bd=1, width=32)
+        self.birthday_entry.grid(column=1, row=8, sticky='e', padx=10, pady=2)
 
         self.education_label = Label(self, text="Education:")
-        self.education_label.grid(column=0, row=8, sticky='w', padx=10, pady=2)
+        self.education_label.grid(column=0, row=9, sticky='w', padx=10, pady=2)
 
-        self.education_entry = Entry(self, bd=1)
-        self.education_entry.grid(column=1, row=8, sticky='e', padx=10, pady=2)
+        self.education_entry = Entry(self, bd=1, width=32)
+        self.education_entry.grid(column=1, row=9, sticky='e', padx=10, pady=2)
 
         self.drugs_label = Label(self, text="Drug Use?")
-        self.drugs_label.grid(column=0, row=9, sticky='w', padx=10, pady=2)
+        self.drugs_label.grid(column=0, row=10, sticky='w', padx=10, pady=2)
 
         self.drugs_txtVar = StringVar()
         self.drugs_combo = Combobox(self, width=6, textvariable=self.drugs_txtVar, justify='left')
         self.drugs_combo['values'] = ('No', 'Yes')
-        self.drugs_combo.grid(column=1, row=9, sticky='e', padx=10, pady=2)
+        self.drugs_combo.grid(column=1, row=10, sticky='e', padx=10, pady=2)
         self.drugs_combo.current(0)
 
         self.criminal_label = Label(self, text="Criminal History?")
-        self.criminal_label.grid(column=0, row=10, sticky='w', padx=10, pady=2)
+        self.criminal_label.grid(column=0, row=11, sticky='w', padx=10, pady=2)
 
         self.criminal_txtVar = StringVar()
         self.criminal_combo = Combobox(self, width=6, textvariable=self.criminal_txtVar, justify='left')
         self.criminal_combo['values'] = ('No', 'Yes')
-        self.criminal_combo.grid(column=1, row=10, sticky='e', padx=10, pady=2)
+        self.criminal_combo.grid(column=1, row=11, sticky='e', padx=10, pady=2)
         self.criminal_combo.current(0)
 
         self.overview_label = Label(self, text="Case Overview:")
-        self.overview_label.grid(column=0, row=11, sticky='w', padx=10, pady=2)
+        self.overview_label.grid(column=0, row=12, sticky='w', padx=10, pady=2)
 
         self.overview_text = Text(self, height=6, font='Calibri', wrap='word')
-        self.overview_text.grid(column=0, row=12, columnspan=4, rowspan=2, padx=10, pady=2)
+        self.overview_text.grid(column=0, row=13, columnspan=4, rowspan=2, padx=10, pady=2)
 
         self.add_work_history_btn = Button(self, text="Add Work History", command=self._open_work_history_form)
         self.add_work_history_btn.bind("<Enter>", on_enter)
         self.add_work_history_btn.bind("<Leave>", on_leave)
-        self.add_work_history_btn.grid(column=2, row=0, columnspan=2, rowspan=10)
+        self.add_work_history_btn.grid(column=2, row=0, columnspan=2)
+
+        
+        self.work_history_frame = LabelFrame(self, text="Work History")
+        self.work_history_frame.grid(column=2, row=1, columnspan=2, rowspan=12, sticky='n', pady=10)
 
         done_btn = Button(self, text='Done', command=self._save_to_file)
         done_btn.bind("<Enter>", on_enter)
@@ -418,6 +291,23 @@ class SummaryForm(Toplevel):
 
     def _open_work_history_form(self):
         self.work_history_form = WorkHistoryForm(self)
+
+    def _detect_client_info(self):
+        pdf_path = get_file_path()
+        client_info = scan_for_client_info(pdf_path)
+        self.name_entry.insert(0, client_info['Claimant'])
+        self.ssn_entry.insert(0, client_info['SSN'])
+        self.onset_date_entry.insert(0, client_info['Alleged Onset'])
+        self.title_entry.insert(0, client_info['Claim Type'])
+        self.application_date_entry.insert(0, client_info['Application'])
+        self.update()
+        self.deiconify()
+
+    def _paint_work_history(self):
+        for i, entry in enumerate(self.work_history, start=1):
+            entry_text = f'{i}. {entry["job_title"]} : {entry["intensity"]} : {entry["skill_level"]}'
+            label = Label(self.work_history_frame, text=entry_text)
+            label.grid(column=0, row=i+1, padx=10, pady=2, sticky='w')
 
     def _save_to_file(self):
         
@@ -541,20 +431,10 @@ class WorkHistoryForm(Toplevel):
         self.add_entry_btn = Button(self, text='Add', command=self._add_entry)
         self.add_entry_btn.grid(column=3, row=1, padx=10, pady=2)
 
-        self.work_history_frame = Frame(self)
-        self.work_history_frame.grid(column=0, row=2, columnspan=3)
-        self._paint_work_history()
-
         center(self)
         self.attributes('-alpha', 1.0)
         self.mainloop()
     
-    def _paint_work_history(self):
-        for i, entry in enumerate(self.parent.work_history, start=1):
-            entry_text = f'{i}. {entry["job_title"]} : {entry["intensity"]} : {entry["skill_level"]}'
-            Label(self.work_history_frame, text=entry_text).pack(expand=True)
-            #label.grid(column=0, row=i+1, padx=10, pady=2, sticky='w')
-
     def _add_entry(self):
         entry = {
             'job_title': self.job_title_entry.get(),
@@ -563,8 +443,8 @@ class WorkHistoryForm(Toplevel):
         }
 
         self.parent.work_history.append(entry)
-        self._paint_work_history()
-        self.mainloop()
+        self.parent._paint_work_history()
+        self.parent.update()
 
 class StatusBar(App):
     

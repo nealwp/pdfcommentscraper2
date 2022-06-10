@@ -7,6 +7,32 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 
+def scan_for_client_info(pdf_path):
+    
+    with open(pdf_path, 'rb') as in_file: 
+        parser = PDFParser(in_file)
+        doc = PDFDocument(parser)
+        rsrcmgr = PDFResourceManager()
+        
+        for pagenumber, page in enumerate(PDFPage.create_pages(doc)):
+            if pagenumber > 0:
+                break
+            output_string = StringIO()
+            device = TextConverter(rsrcmgr, output_string, laparams=LAParams())
+            interpreter = PDFPageInterpreter(rsrcmgr, device)                                                    
+            interpreter.process_page(page)            
+            #app.set_status(f'Processing page {pge}...')
+            #app.update()
+            page_text = output_string.getvalue()
+            lines = page_text.splitlines()
+            lines = [line for line in lines if line]
+            client_data = lines[:6]
+            client = {}
+            for e in client_data:
+                e = e.split(':')
+                client[e[0]] = e[1].lstrip()
+            return client
+
 def scanforkeywords(pdf_path, app):
     
     with open(r".\\config\\keywords", "r") as keyword_file:
@@ -59,8 +85,8 @@ def scanforkeywords(pdf_path, app):
             interpreter.process_page(page)
             pge += 1
             
-            #if pge > 99:
-            #    break
+            if pge > 3:
+                break
             print(" [%d]\r"%pge, end="")
             app.set_status(f'Processing page {pge}...')
             app.update()
