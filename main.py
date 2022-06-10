@@ -403,6 +403,32 @@ class KeywordSettingsForm(Toplevel):
             keyword_file.writelines(kw + '\n' for kw in self.keywords)
         self.listbox.delete(idx)
 
+class ContextSizeForm(Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent, padx=15, pady=15)
+        self.attributes('-alpha', 0.0)
+        self.title('Context Size Settings')
+
+        words_minus_label = Label(self, text="Words Before Keyword:")
+        words_minus_label.grid(column=0, row=0, sticky='w', padx=10, pady=3)
+        
+        words_minus_entry = Entry(self, width=3, bd=1)
+        words_minus_entry.grid(column=1, row=0, sticky='e', padx=10, pady=3)
+        
+        words_plus_label = Label(self, text="Words After Keyword:")
+        words_plus_label.grid(column=0, row=1, sticky='w', padx=10, pady=3)
+        
+        words_plus_entry = Entry(self, width=3, bd=1)
+        words_plus_entry.grid(column=1, row=1, sticky='e', padx=10, pady=3)
+
+        done_btn = Button(self, text='Done', command=self.destroy)
+        done_btn.bind("<Enter>", on_enter)
+        done_btn.bind("<Leave>", on_leave)
+        done_btn.grid(column=0, row=3, columnspan=2, pady=3)
+        
+        center(self)
+        self.attributes('-alpha', 1.0)
+
 class StatusBar(Frame):
     
     def __init__(self, parent):
@@ -452,35 +478,18 @@ class MenuBar(Menu):
         self.keyword_settings_form = KeywordSettingsForm(self)
 
     def _open_context_size_menu(self):
-        win = Toplevel(self, padx=15, pady=15)
-        win.attributes('-alpha', 0.0)
-        win.title('Context Size Settings')
-
-        words_minus_label = Label(win, text="Words Before Keyword:")
-        words_minus_label.grid(column=0, row=0, sticky='w', padx=10)
-        
-        words_minus_entry = Entry(win, width=3, bd=1)
-        words_minus_entry.grid(column=1, row=0, sticky='e', padx=10)
-        
-        words_plus_label = Label(win, text="Words After Keyword:")
-        words_plus_label.grid(column=0, row=1, sticky='w', padx=10)
-        
-        words_plus_entry = Entry(win, width=3, bd=1)
-        words_plus_entry.grid(column=1, row=1, sticky='e', padx=10)
-
-        done_btn = Button(win, text='Done', command=win.destroy)
-        done_btn.bind("<Enter>", on_enter)
-        done_btn.bind("<Leave>", on_leave)
-        done_btn.grid(column=0, row=3, columnspan=2)
-        
-        center(win)
-        win.attributes('-alpha', 1.0)
+        self.context_size_form = ContextSizeForm(self)        
 
     def _get_help(self):
         quotes = [
             "Do or do not. There is no try.",
             "Whether you think you can or think you can't...you're right!",
             "The optimist sees opportunity in every difficulty.",
+            "The secret of getting ahead is getting started.",
+            "It's hard to beat a person who never gives up.",
+            "Impossible is just an opinion.",
+            "Have you tried turning it off and back on again?",
+            "There are no problems; only solutions."
             "Ready."
         ]
         self.parent.status_bar._set_status(random.choice(quotes))
