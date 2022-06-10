@@ -1,4 +1,4 @@
-from pydoc import cli
+import random
 import re
 from time import perf_counter
 from csv import writer, DictWriter
@@ -22,141 +22,14 @@ class App(Tk):
         self.geometry('809x500')
         self.title('disabilitydude')
 
-        self.menubar = Menu(self, bd=5)
-
-        self.filemenu = Menu(self.menubar, tearoff=0)
-        self.filemenu.add_command(label='New Summary', command=self.open_new_summary_form)
-        self.filemenu.add_command(label='Open Summary')
-        self.filemenu.add_command(label="Exit", command=self.destroy)
-        self.menubar.add_cascade(label="File", menu=self.filemenu)
-
-        self.actions_menu = Menu(self.menubar, tearoff=0)
-        self.actions_menu.add_command(label="Scan PDF for Keywords", command=self.run_keyword_scan)
-        self.actions_menu.add_command(label="Scrape Comments from PDF", command=run_commentscraper)
-        self.menubar.add_cascade(label="Actions", menu=self.actions_menu)
-        
-        self.settingsmenu = Menu(self.menubar, tearoff=0)
-        self.settingsmenu.add_command(label="Keywords", command=self.open_keywords_menu)
-        self.settingsmenu.add_command(label="Context Size", command=self.open_context_size_menu)
-        self.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
-        
-        self.menubar.add_command(label="Help", command=lambda: self.set_status('you clicked help'))
-        
-        self.config(menu=self.menubar)
-        
-        self.status_bar = Frame(self, bd=1, relief=SUNKEN)
-        
-        self.status = Label(self.status_bar, text='Ready', anchor=W, padx=5)
-        self.status.grid(column=0, row=0, sticky='w', columnspan=1)
-        
-        self.version = Label(self.status_bar, text='v1.0.0', anchor=E, padx=5)
-        self.version.grid(column=1, row=0, sticky="e", columnspan=1)
-        
-        self.status_bar.columnconfigure(0, weight=1)
+        self.status_bar = StatusBar(self)
         self.status_bar.pack(side=BOTTOM, fill=X)
+
+        self.menubar = MenuBar(self)        
+        self.config(menu=self.menubar)
         
         self._center()
         self.attributes('-alpha', 1.0)
-
-    def set_status(self, message):
-        self.status = Label(self.status_bar, text=message, anchor=W, padx=5)
-        self.status.grid(column=0, row=0, sticky='w', columnspan=1)
-
-    def run_keyword_scan(self):
-
-        fieldnames = ['keyword', 'page', 'text', 'exhibit', 'provider', 'exhibit_page']
-
-        pdf_path = get_file_path()
-        debut = perf_counter()
-        output = scanforkeywords(pdf_path, self)
-        fin = perf_counter()
-        output_path = get_save_path('csv')
-        with open(output_path,'w',encoding='utf-8', newline='') as f:
-            csvdw = DictWriter(f, fieldnames=fieldnames)
-            csvdw.writeheader()
-            csvdw.writerows(output)
-        print(f"Completed in {fin - debut:0.4f}s")
-        return
-
-    def open_keywords_menu(self):
-
-        keywords = read_keywords_file()
-
-        win = Toplevel(self)
-        win.attributes('-alpha', 0.0)
-        win.title('Keywords Settings')
-
-        leftFrame = Frame(win)
-        leftFrame.grid(column=0, row=1)
-
-        entrylabel = Label(leftFrame, text='New Keyword')
-        entrylabel.grid(column=0, row=0, sticky='sw', rowspan=1, padx=10)
-
-        entrybox = Entry(leftFrame, width=24, bd=1)
-        entrybox.grid(column=0, row=1, sticky='nw', rowspan=1, columnspan=1, padx=10)
-
-        addBtn = Button(leftFrame, text='Add', command=lambda: add_keyword(entrybox.get(), entrybox))
-        addBtn.grid(column=0, row=2, pady=10)
-        addBtn.bind("<Enter>", on_enter)
-        addBtn.bind("<Leave>", on_leave)
-
-        rightFrame = Frame(win)
-        rightFrame.grid(column=1, row=1, pady=10)
-        
-        keywordboxlabel = Label(rightFrame, text='Active Keywords')
-        keywordboxlabel.grid(column=0, row=0, sticky='nw', rowspan=1)
-
-        listbox = Listbox(rightFrame, height=16, selectmode='single', activestyle='none')
-        for i, kw in enumerate(keywords):
-            listbox.insert(i, kw)
-
-        listbox.grid(column=0, row=1, sticky='nw')
-
-        scrollbar = Scrollbar(rightFrame, orient='vertical', command=listbox.yview)
-        scrollbar.grid(column=1, row=1, sticky='nsw')
-        listbox['yscrollcommand'] = scrollbar.set
-
-        deleteBtn = Button(rightFrame, text='Delete Selected', command=lambda: delete_keyword(listbox.get(listbox.curselection())))
-        deleteBtn.grid(column=0, row=2, pady=10)
-        deleteBtn.bind("<Enter>", on_enter)
-        deleteBtn.bind("<Leave>", on_leave)
-        
-        doneBtn = Button(win, text='Done', command=win.destroy)
-        doneBtn.bind("<Enter>", on_enter)
-        doneBtn.bind("<Leave>", on_leave)
-        doneBtn.grid(column=0, row=3, columnspan=2, pady=10)
-        center(win)
-        win.attributes('-alpha', 1.0)
-        win.mainloop()
-
-    def open_context_size_menu(self):
-        win = Toplevel(self, padx=15, pady=15)
-        win.attributes('-alpha', 0.0)
-        win.title('Context Size Settings')
-
-        words_minus_label = Label(win, text="Words Before Keyword:")
-        words_minus_label.grid(column=0, row=0, sticky='w', padx=10)
-        
-        words_minus_entry = Entry(win, width=3, bd=1)
-        words_minus_entry.grid(column=1, row=0, sticky='e', padx=10)
-        
-        words_plus_label = Label(win, text="Words After Keyword:")
-        words_plus_label.grid(column=0, row=1, sticky='w', padx=10)
-        
-        words_plus_entry = Entry(win, width=3, bd=1)
-        words_plus_entry.grid(column=1, row=1, sticky='e', padx=10)
-
-        done_btn = Button(win, text='Done', command=win.destroy)
-        done_btn.bind("<Enter>", on_enter)
-        done_btn.bind("<Leave>", on_leave)
-        done_btn.grid(column=0, row=3, columnspan=2)
-        
-        center(win)
-        win.attributes('-alpha', 1.0)
-        win.mainloop()
-    
-    def open_new_summary_form(self):
-        self.summary_form = SummaryForm(self)
 
     def _center(self):
         """
@@ -445,51 +318,188 @@ class WorkHistoryForm(Toplevel):
         self.parent._paint_work_history()
         self.parent.update()
 
-class StatusBar(App):
-    
-    def __init__(self):
-        super().__init__()
+class KeywordSettingsForm(Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent, padx=15, pady=15)
+
         self.parent = parent
-        self.parent.status_bar = Frame(self.parent, bd=1, relief=SUNKEN)
+        self.attributes('-alpha', 0.0)
+        self.title('Keyword Settings')
+
+        self.leftFrame = Frame(self)
+        self.leftFrame.grid(column=0, row=1)
+
+        self.entrylabel = Label(self.leftFrame, text='New Keyword')
+        self.entrylabel.grid(column=0, row=0, sticky='sw', rowspan=1, padx=10)
+
+        self.entrybox = Entry(self.leftFrame, width=24, bd=1)
+        self.entrybox.grid(column=0, row=1, sticky='nw', rowspan=1, columnspan=1, padx=10)
+
+        self.addBtn = Button(self.leftFrame, text='Add', command=self._add_keyword)
+        self.addBtn.grid(column=0, row=2, pady=10)
+        self.addBtn.bind("<Enter>", on_enter)
+        self.addBtn.bind("<Leave>", on_leave)
+
+        self.rightFrame = Frame(self)
+        self.rightFrame.grid(column=1, row=1, pady=10)
         
-        self.status = Label(self.parent.status_bar, text='Ready', anchor=W, padx=5)
+        self._get_keywords()
+
+        self.keywordboxlabel = Label(self.rightFrame, text='Active Keywords')
+        self.keywordboxlabel.grid(column=0, row=0, sticky='nw', rowspan=1)
+
+        self.listbox = Listbox(self.rightFrame, height=16, selectmode='single', activestyle='none')
+        for i, kw in enumerate(self.keywords):
+            self.listbox.insert(i, kw)
+
+        self.listbox.grid(column=0, row=1, sticky='nw')
+
+        self.scrollbar = Scrollbar(self.rightFrame, orient='vertical', command=self.listbox.yview)
+        self.scrollbar.grid(column=1, row=1, sticky='nsw')
+        self.listbox['yscrollcommand'] = self.scrollbar.set
+
+        self.deleteBtn = Button(self.rightFrame, text='Delete Selected', command=self._delete_keyword)
+        self.deleteBtn.grid(column=0, row=2, pady=10)
+        self.deleteBtn.bind("<Enter>", on_enter)
+        self.deleteBtn.bind("<Leave>", on_leave)
+        
+        doneBtn = Button(self, text='Done', command=self.destroy)
+        doneBtn.bind("<Enter>", on_enter)
+        doneBtn.bind("<Leave>", on_leave)
+        doneBtn.grid(column=0, row=3, columnspan=2, pady=10)
+     
+        center(self)
+        self.attributes('-alpha', 1.0)
+
+    def _add_keyword(self):
+        word = self.entrybox.get()
+        self.entrybox.delete(0, END)
+        with open(r".\\config\\keywords", "a") as keyword_file:
+            keyword_file.write(word + '\n')
+        self._refresh_keyword_listbox()
+
+    def _get_keywords(self):
+        with open(r".\\config\\keywords", "r") as keyword_file:
+            file_content = keyword_file.read()
+            keywords = file_content.split('\n')
+            keywords = [w for w in keywords if w]
+            keywords.sort()
+            self.keywords = keywords
+
+    def _refresh_keyword_listbox(self):
+        self.listbox.delete(0, END)
+        self._get_keywords()
+        for i, kw in enumerate(self.keywords):
+            self.listbox.insert(i, kw)
+
+    def _delete_keyword(self):
+        idx = self.listbox.curselection()
+        word = self.listbox.get(idx)
+        for i, kw in enumerate(self.keywords):
+            if kw == word:
+                self.keywords.pop(i)
+    
+        with open(r".\\config\\keywords", "w") as keyword_file:
+            keyword_file.writelines(kw + '\n' for kw in self.keywords)
+        self.listbox.delete(idx)
+
+class StatusBar(Frame):
+    
+    def __init__(self, parent):
+        super().__init__(parent, bd=1, relief=SUNKEN)
+        self.parent = parent        
+        self.status = Label(self, text='Ready', anchor=W, padx=5)
         self.status.grid(column=0, row=0, sticky='w', columnspan=1)
         
-        self.version = Label(self.parent.status_bar, text='v1.0.0', anchor=E, padx=5)
+        self.version = Label(self, text='v1.0.0', anchor=E, padx=5)
         self.version.grid(column=1, row=0, sticky="e", columnspan=1)
         
-        self.parent.status_bar.columnconfigure(0, weight=1)
-        self.parent.status_bar.pack(side=BOTTOM, fill=X)
+        self.columnconfigure(0, weight=1)
 
-    def set_status(self, message):
-        self.status = Label(self.parent.status_bar, text=message, anchor=W, padx=5)
+    def _set_status(self, message):
+        self.status.configure(text=message)
 
-class MenuBar(App):
-    def __init__(self) -> None:
-        super().__init__()
+    def _reset_status(self):
+        self.status.configure(text='Ready')
+
+class MenuBar(Menu):
+    def __init__(self, parent) -> None:
+        super().__init__(parent, bd=5)
         self.parent = parent
-        self.parent.menubar = Menu(self.parent, bd=5)
 
-        self.filemenu = Menu(self.parent.menubar, tearoff=0)
-        self.filemenu.add_command(label="Exit", command=parent.destroy)
-        self.parent.menubar.add_cascade(label="File", menu=self.filemenu)
+        self.filemenu = Menu(self, tearoff=0)
+        self.filemenu.add_command(label='New Summary', command=self._new_summary_form)
+        self.filemenu.add_command(label='Open Summary')
+        self.filemenu.add_command(label="Exit", command=self.parent.destroy)
+        self.add_cascade(label="File", menu=self.filemenu)
 
-        self.actions_menu = Menu(self.parent.menubar, tearoff=0)
-        self.actions_menu.add_command(label="Scan PDF for Keywords", command=run_keyword_scan)
+        self.actions_menu = Menu(self, tearoff=0)
+        self.actions_menu.add_command(label="Scan PDF for Keywords", command=self._run_keyword_scan)
         self.actions_menu.add_command(label="Scrape Comments from PDF", command=run_commentscraper)
-        self.parent.menubar.add_cascade(label="Actions", menu=self.actions_menu)
+        self.add_cascade(label="Actions", menu=self.actions_menu)
         
-        self.settingsmenu = Menu(self.parent.menubar, tearoff=0)
-        self.settingsmenu.add_command(label="Keywords", command=lambda: open_keywords_menu(parent))
-        self.settingsmenu.add_command(label="Context Size", command=lambda: open_context_size_menu(parent))
-        self.parent.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
+        self.settingsmenu = Menu(self, tearoff=0)
+        self.settingsmenu.add_command(label="Keywords", command=self._open_keywords_menu)
+        self.settingsmenu.add_command(label="Context Size", command=self._open_context_size_menu)
+        self.add_cascade(label="Settings", menu=self.settingsmenu)
         
-        self.parent.menubar.add_command(label="Help", command=lambda: self.set_status('you clicked help'))
+        self.add_command(label="Help", command=self._get_help)
+
+    def _new_summary_form(self):
+        self.summary_form = SummaryForm(self)
+
+    def _open_keywords_menu(self):
+        self.keyword_settings_form = KeywordSettingsForm(self)
+
+    def _open_context_size_menu(self):
+        win = Toplevel(self, padx=15, pady=15)
+        win.attributes('-alpha', 0.0)
+        win.title('Context Size Settings')
+
+        words_minus_label = Label(win, text="Words Before Keyword:")
+        words_minus_label.grid(column=0, row=0, sticky='w', padx=10)
         
-        self.parent.config(menu=self.parent.menubar)
+        words_minus_entry = Entry(win, width=3, bd=1)
+        words_minus_entry.grid(column=1, row=0, sticky='e', padx=10)
+        
+        words_plus_label = Label(win, text="Words After Keyword:")
+        words_plus_label.grid(column=0, row=1, sticky='w', padx=10)
+        
+        words_plus_entry = Entry(win, width=3, bd=1)
+        words_plus_entry.grid(column=1, row=1, sticky='e', padx=10)
+
+        done_btn = Button(win, text='Done', command=win.destroy)
+        done_btn.bind("<Enter>", on_enter)
+        done_btn.bind("<Leave>", on_leave)
+        done_btn.grid(column=0, row=3, columnspan=2)
+        
+        center(win)
+        win.attributes('-alpha', 1.0)
+
+    def _get_help(self):
+        quotes = [
+            "Do or do not. There is no try.",
+            "Whether you think you can or think you can't...you're right!",
+            "The optimist sees opportunity in every difficulty.",
+            "Ready."
+        ]
+        self.parent.status_bar._set_status(random.choice(quotes))
+
+    def _run_keyword_scan(self):
+        pdf_path = get_file_path()
+        debut = perf_counter()
+        output = scanforkeywords(pdf_path, self.parent)
+        fin = perf_counter()
+        output_path = get_save_path('csv')
+        with open(output_path,'w',encoding='utf-8', newline='') as f:
+            fieldnames = ['keyword', 'page', 'text', 'exhibit', 'provider', 'exhibit_page']
+            csvdw = DictWriter(f, fieldnames=fieldnames)
+            csvdw.writeheader()
+            csvdw.writerows(output)
+        print(f"Completed in {fin - debut:0.4f}s")
 
     def set_app_status(self, message):
-        self.set_status(message)
+        self.parent.set_status(message)
 
 
 def findWholeWord(w):
