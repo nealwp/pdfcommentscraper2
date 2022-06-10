@@ -13,7 +13,6 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_UNDERLINE
 from docx.enum.style import WD_STYLE_TYPE
 import json
 
-
 from helpers import write_csv, get_file_path, get_save_path
 
 class App(Tk):
@@ -71,7 +70,7 @@ class App(Tk):
         debut = perf_counter()
         output = scanforkeywords(pdf_path, self)
         fin = perf_counter()
-        output_path = get_save_path()
+        output_path = get_save_path('csv')
         with open(output_path,'w',encoding='utf-8', newline='') as f:
             csvdw = DictWriter(f, fieldnames=fieldnames)
             csvdw.writeheader()
