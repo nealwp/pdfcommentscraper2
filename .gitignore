@@ -10,5 +10,4 @@ build
 *.pdf
 *.jpg
 lib/*
-*.txt
 *.json
