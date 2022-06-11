@@ -155,14 +155,19 @@ class SummaryForm(Toplevel):
         self.work_history_frame = LabelFrame(self, text="Work History")
         self.work_history_frame.grid(column=2, row=1, columnspan=2, rowspan=12, sticky='n', pady=10)
 
-        done_btn = Button(self, text='Done', command=self._save_to_file)
+        
+        cancel_btn = Button(self, text='Cancel', width=20, command=self.destroy)
+        cancel_btn.bind("<Enter>", on_enter)
+        cancel_btn.bind("<Leave>", on_leave)
+        cancel_btn.grid(column=0, row=99, columnspan=2, pady=4)
+
+        done_btn = Button(self, text='Generate Summary', width=20, command=self._save_to_file)
         done_btn.bind("<Enter>", on_enter)
         done_btn.bind("<Leave>", on_leave)
-        done_btn.grid(column=0, row=99, columnspan=4, pady=4)
+        done_btn.grid(column=1, row=99, columnspan=2, pady=4)
 
         center(self)
         self.attributes('-alpha', 1.0)
-        self.mainloop()
 
     def _open_work_history_form(self):
         self.work_history_form = WorkHistoryForm(self)
@@ -195,7 +200,7 @@ class SummaryForm(Toplevel):
         prior_applications = self.prior_txtVar.get()
         birthdate = self.birthday_entry.get()
         education = self.education_entry.get()
-        work_history = []
+        work_history = self.work_history
         drug_use = self.drugs_txtVar.get()
         criminal_history = self.criminal_txtVar.get()
         overview = self.overview_text.get('1.0', 'end-1c')
@@ -244,7 +249,10 @@ class SummaryForm(Toplevel):
 
         doc.add_paragraph(f'EDUCATION\t\t\t{data["education"]}')
         doc.add_paragraph("WORK HX")
+        for idx, entry in enumerate(data['work_history'], start=1):
+            doc.add_paragraph(f'\t{idx}. {entry["job_title"]} : {entry["intensity"]} : {entry["skill_level"]}')
  
+        doc.add_paragraph('')
         doc.add_paragraph(f'DRUG USE\t\t\t{data["drug_use"]}')
         doc.add_paragraph(f'CRIMINAL HX\t\t\t{data["criminal_history"]}\n')
 
@@ -268,7 +276,7 @@ class SummaryForm(Toplevel):
         output_path = get_save_path('docx')
         doc.save(output_path)
 
-        self.parent.set_status('Data Saved')
+        self.parent.parent.status_bar._set_status('Data Saved')
         self.destroy()
         return
 
@@ -306,9 +314,11 @@ class WorkHistoryForm(Toplevel):
         self.add_entry_btn = Button(self, text='Add', command=self._add_entry)
         self.add_entry_btn.grid(column=3, row=1, padx=10, pady=2)
 
+        self.close_btn = Button(self, text='Close', width=12, command=self.destroy)
+        self.close_btn.grid(column=0, row=2, columnspan=4, pady=4)
+
         center(self)
         self.attributes('-alpha', 1.0)
-        self.mainloop()
     
     def _add_entry(self):
         entry = {
@@ -342,6 +352,16 @@ class KeywordSettingsForm(Toplevel):
         self.addBtn.grid(column=0, row=2, pady=10)
         self.addBtn.bind("<Enter>", on_enter)
         self.addBtn.bind("<Leave>", on_leave)
+
+        
+        self.importKeywordsBtn = Button(
+            self.leftFrame, 
+            text='Import Keywords from File', 
+            command=self._select_keywords_file
+            )
+        self.importKeywordsBtn.grid(column=0, row=3, pady=10)
+        self.importKeywordsBtn.bind("<Enter>", on_enter)
+        self.importKeywordsBtn.bind("<Leave>", on_leave)
 
         self.rightFrame = Frame(self)
         self.rightFrame.grid(column=1, row=1, pady=10)
@@ -392,6 +412,10 @@ class KeywordSettingsForm(Toplevel):
             keywords = [w for w in keywords if w]
             keywords.sort()
             self.keywords = keywords
+
+    def _select_keywords_file(self):
+        custom_keywords_path = get_file_path()
+
 
     def _refresh_keyword_listbox(self):
         self.listbox.delete(0, END)

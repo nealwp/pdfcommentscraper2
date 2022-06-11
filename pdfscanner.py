@@ -88,7 +88,7 @@ def scanforkeywords(pdf_path, app):
             if pge > 3:
                 break
             print(" [%d]\r"%pge, end="")
-            app.set_status(f'Processing page {pge}...')
+            app.status_bar.set_status(f'Processing page {pge}...')
             app.update()
             page_text = output_string.getvalue()
             list_text = list(page_text.split(" "))
