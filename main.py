@@ -11,9 +11,12 @@ import docx
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_UNDERLINE
 from docx.enum.style import WD_STYLE_TYPE
+from configparser import ConfigParser
 import json
 
 from helpers import write_csv, get_file_path, get_save_path
+
+config = ConfigParser()
 
 class App(Tk):
     def __init__(self, *args, **kwargs) -> None:
@@ -372,14 +375,18 @@ class KeywordSettingsForm(Toplevel):
         self.attributes('-alpha', 1.0)
 
     def _add_keyword(self):
+        config.read('./config/config.ini')
+        kw_file_path = config['DEFAULT']['KeywordsPath']
         word = self.entrybox.get()
         self.entrybox.delete(0, END)
-        with open(r".\\config\\keywords", "a") as keyword_file:
+        with open(kw_file_path, "a") as keyword_file:
             keyword_file.write(word + '\n')
         self._refresh_keyword_listbox()
 
     def _get_keywords(self):
-        with open(r".\\config\\keywords", "r") as keyword_file:
+        config.read('./config/config.ini')
+        kw_file_path = config['DEFAULT']['KeywordsPath']
+        with open(kw_file_path, "r") as keyword_file:
             file_content = keyword_file.read()
             keywords = file_content.split('\n')
             keywords = [w for w in keywords if w]
@@ -398,8 +405,9 @@ class KeywordSettingsForm(Toplevel):
         for i, kw in enumerate(self.keywords):
             if kw == word:
                 self.keywords.pop(i)
-    
-        with open(r".\\config\\keywords", "w") as keyword_file:
+        config.read('./config/config.ini')
+        kw_file_path = config['DEFAULT']['KeywordsPath']
+        with open(kw_file_path, "w") as keyword_file:
             keyword_file.writelines(kw + '\n' for kw in self.keywords)
         self.listbox.delete(idx)
 
@@ -433,13 +441,15 @@ class StatusBar(Frame):
     
     def __init__(self, parent):
         super().__init__(parent, bd=1, relief=SUNKEN)
-        self.parent = parent        
+        self.parent = parent
+                
         self.status = Label(self, text='Ready', anchor=W, padx=5)
         self.status.grid(column=0, row=0, sticky='w', columnspan=1)
         
-        self.version = Label(self, text='v1.0.0', anchor=E, padx=5)
+        self.version = Label(self, text='error', anchor=E, padx=5)
         self.version.grid(column=1, row=0, sticky="e", columnspan=1)
-        
+        self._get_app_version()
+
         self.columnconfigure(0, weight=1)
 
     def _set_status(self, message):
@@ -447,6 +457,13 @@ class StatusBar(Frame):
 
     def _reset_status(self):
         self.status.configure(text='Ready')
+    
+    def _get_app_version(self):
+        config.read('./config/config.ini')
+        maj = config['DEFAULT']['AppMajorVersion']
+        min = config['DEFAULT']['AppMinorVersion']
+        patch = config['DEFAULT']['AppPatchVersion']
+        self.version.config(text=f"v{maj}.{min}.{patch}")
 
 class MenuBar(Menu):
     def __init__(self, parent) -> None:

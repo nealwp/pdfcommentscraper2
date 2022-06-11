@@ -35,7 +35,7 @@ def scan_for_client_info(pdf_path):
 
 def scanforkeywords(pdf_path, app):
     
-    with open(r".\\config\\keywords", "r") as keyword_file:
+    with open(r".\\config\\keywords\\default", "r") as keyword_file:
         file_content = keyword_file.read()
         keywords = file_content.split('\n') 
         keywords = [w for w in keywords if w]
