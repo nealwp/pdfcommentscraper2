@@ -33,6 +33,35 @@ def scan_for_client_info(pdf_path):
                 client[e[0]] = e[1].lstrip()
             return client
 
+def scan_for_date_of_birth(pdf_path = "C:\\Users\\Owner\\Downloads\\2846269-richard_herrera-case_file_exhibited_bookmarked-6-07-2022-1654613771 (1).pdf"):
+    
+    with open(pdf_path, 'rb') as in_file: 
+        parser = PDFParser(in_file)
+        doc = PDFDocument(parser)
+        rsrcmgr = PDFResourceManager()
+        
+        for pagenumber, page in enumerate(PDFPage.create_pages(doc)):
+            if pagenumber < 2:
+                continue
+            elif pagenumber > 2:
+                break
+
+            output_string = StringIO()
+            device = TextConverter(rsrcmgr, output_string, laparams=LAParams())
+            interpreter = PDFPageInterpreter(rsrcmgr, device)                                                    
+            interpreter.process_page(page)            
+            page_text = output_string.getvalue()
+            print(page_text)
+            #lines = page_text.splitlines()
+            #print(lines)
+            """ lines = [line for line in lines if line]
+            client_data = lines[:6]
+            client = {}
+            for e in client_data:
+                e = e.split(':')
+                client[e[0]] = e[1].lstrip()
+            return client """
+
 def scanforkeywords(pdf_path, app):
     
     with open(r".\\config\\keywords\\default", "r") as keyword_file:
@@ -127,3 +156,6 @@ def scanforkeywords(pdf_path, app):
     print('\nfinds: ' + str(resultCount))
     print('done')
     return output
+
+if __name__ == '__main__':
+    scan_for_date_of_birth()
