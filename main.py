@@ -6,11 +6,9 @@ from tkinter import BOTH, END, LEFT, LabelFrame, Listbox, Scrollbar, StringVar, 
 from tkinter.ttk import Combobox
 from tkcalendar import Calendar, DateEntry
 from commentscraper import scrape_comments
-from pdfscanner import scanforkeywords, scan_for_client_info
-import docx
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_UNDERLINE
-from docx.enum.style import WD_STYLE_TYPE
+from pdfscanner import scan_for_keywords, scan_for_client_info, scan_for_comments
+from docwriter import generate_medical_summary
+
 from configparser import ConfigParser
 import json
 
@@ -56,13 +54,20 @@ class SummaryForm(Toplevel):
         super().__init__(parent, padx=15, pady=15)
         self.parent = parent
         self.work_history = []
+        self.pdf_comments = []
+        self.pdf_path = ""
         self.attributes('-alpha', 0.0)
         self.title('New Summary')
         
         self.detect_client_btn = Button(self, text="Detect Client Info", command=self._detect_client_info)
         self.detect_client_btn.bind("<Enter>", on_enter)
         self.detect_client_btn.bind("<Leave>", on_leave)
-        self.detect_client_btn.grid(column=0, row=0, columnspan=2, sticky='w', padx=10, pady=2)
+        self.detect_client_btn.grid(column=0, row=0, sticky='w', padx=10, pady=2)
+
+        self.get_comments_btn = Button(self, text="Detect PDF Comments", command=self._scan_for_comments)
+        self.get_comments_btn.bind("<Enter>", on_enter)
+        self.get_comments_btn.bind("<Leave>", on_leave)
+        self.get_comments_btn.grid(column=1, row=0, sticky='w', padx=10, pady=2)
 
         self.name_label = Label(self, text="Client Name:")
         self.name_label.grid(column=0, row=1, sticky='w', padx=10, pady=2)
@@ -173,8 +178,10 @@ class SummaryForm(Toplevel):
         self.work_history_form = WorkHistoryForm(self)
 
     def _detect_client_info(self):
-        pdf_path = get_file_path()
-        client_info = scan_for_client_info(pdf_path)
+        if not self.pdf_path:
+            self.pdf_path = get_file_path()
+
+        client_info = scan_for_client_info(self.pdf_path)
         self.name_entry.insert(0, client_info['Claimant'])
         self.ssn_entry.insert(0, client_info['SSN'])
         self.onset_date_entry.insert(0, client_info['Alleged Onset'])
@@ -188,6 +195,15 @@ class SummaryForm(Toplevel):
             entry_text = f'{i}. {entry["job_title"]} : {entry["intensity"]} : {entry["skill_level"]}'
             label = Label(self.work_history_frame, text=entry_text)
             label.grid(column=0, row=i+1, padx=10, pady=2, sticky='w')
+
+    def _scan_for_comments(self):
+        if not self.pdf_path:
+            self.pdf_path = get_file_path()
+        
+        self.pdf_comments = scan_for_comments(self.pdf_path)
+        self.update()
+        self.deiconify()
+
 
     def _save_to_file(self):
         
@@ -204,6 +220,7 @@ class SummaryForm(Toplevel):
         drug_use = self.drugs_txtVar.get()
         criminal_history = self.criminal_txtVar.get()
         overview = self.overview_text.get('1.0', 'end-1c')
+        comments = self.pdf_comments
 
         data = {
             'client_name': client_name,
@@ -218,61 +235,11 @@ class SummaryForm(Toplevel):
             'work_history': work_history,
             'drug_use': drug_use,
             'criminal_history': criminal_history,
-            'overview': overview
+            'overview': overview,
+            'comments': comments
         }
 
-        print(data)
-
-        doc = docx.Document()
-
-        style = doc.styles['Normal']
-        font = style.font
-        font.name = 'Calibri'
-
-        style = doc.styles.add_style('Normal 2', WD_STYLE_TYPE.PARAGRAPH)
-        font = style.font
-        font.name = 'Arial Narrow'
-        font.size = Pt(16)
-        font.underline = True
-        font.bold = True
-        font.color.rgb = None 
-
-        doc.add_paragraph(f'CLIENT NAME\t\t\t{data["client_name"]}')
-        doc.add_paragraph(f'CLIENT SSN\t\t\t{data["client_ssn"]}\n')
- 
-        doc.add_paragraph(f'TITLE\t\t\t\t{data["title"]}')
-        doc.add_paragraph(f'APPLICATION DATE\t\t{data["application_date"]}')
-        doc.add_paragraph(f'ALLEGED ONSET DATE\t\t{data["onset_date"]}')
-        doc.add_paragraph(f'DATE LAST INSURED\t\t{data["insured_date"]}')
-        doc.add_paragraph(f'PRIOR APPLICATIONS?\t\t{data["prior_applications"]}')
-        doc.add_paragraph(f'DOB\t\t\t\t{data["birthdate"]}\n')
-
-        doc.add_paragraph(f'EDUCATION\t\t\t{data["education"]}')
-        doc.add_paragraph("WORK HX")
-        for idx, entry in enumerate(data['work_history'], start=1):
-            doc.add_paragraph(f'\t{idx}. {entry["job_title"]} : {entry["intensity"]} : {entry["skill_level"]}')
- 
-        doc.add_paragraph('')
-        doc.add_paragraph(f'DRUG USE\t\t\t{data["drug_use"]}')
-        doc.add_paragraph(f'CRIMINAL HX\t\t\t{data["criminal_history"]}\n')
-
- 
-        doc.add_paragraph(f'{data["overview"]}\n')
-        
-        for paragraph in doc.paragraphs:
-            paragraph.paragraph_format.space_after = Pt(0)
-            paragraph.style = doc.styles['Normal']
-
-        para = doc.add_paragraph('MEDICAL EVIDENCE AND NOTES')
-        para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-        para.style = doc.styles['Normal 2']
-
-        for section in doc.sections:
-            section.left_margin = Inches(1)
-            section.right_margin = Inches(1)
-            section.top_margin = Inches(1)
-            section.bottom_margin = Inches(1)
-
+        doc = generate_medical_summary(data)
         output_path = get_save_path('docx')
         doc.save(output_path)
 
@@ -354,14 +321,15 @@ class KeywordSettingsForm(Toplevel):
         self.addBtn.bind("<Leave>", on_leave)
 
         
-        self.importKeywordsBtn = Button(
-            self.leftFrame, 
-            text='Import Keywords from File', 
-            command=self._select_keywords_file
-            )
-        self.importKeywordsBtn.grid(column=0, row=3, pady=10)
-        self.importKeywordsBtn.bind("<Enter>", on_enter)
-        self.importKeywordsBtn.bind("<Leave>", on_leave)
+        # self.importKeywordsBtn = Button(
+        #     self.leftFrame, 
+        #     text='Import Keywords from File', 
+        #     command=self._select_keywords_file
+        #     )
+        #     
+        # self.importKeywordsBtn.grid(column=0, row=3, pady=10)
+        # self.importKeywordsBtn.bind("<Enter>", on_enter)
+        # self.importKeywordsBtn.bind("<Leave>", on_leave)
 
         self.rightFrame = Frame(self)
         self.rightFrame.grid(column=1, row=1, pady=10)
@@ -396,7 +364,7 @@ class KeywordSettingsForm(Toplevel):
 
     def _add_keyword(self):
         config.read('./config/config.ini')
-        kw_file_path = config['DEFAULT']['KeywordsPath']
+        kw_file_path = config['Keywords']['Path']
         word = self.entrybox.get()
         self.entrybox.delete(0, END)
         with open(kw_file_path, "a") as keyword_file:
@@ -405,7 +373,7 @@ class KeywordSettingsForm(Toplevel):
 
     def _get_keywords(self):
         config.read('./config/config.ini')
-        kw_file_path = config['DEFAULT']['KeywordsPath']
+        kw_file_path = config['Keywords']['Path']
         with open(kw_file_path, "r") as keyword_file:
             file_content = keyword_file.read()
             keywords = file_content.split('\n')
@@ -430,7 +398,7 @@ class KeywordSettingsForm(Toplevel):
             if kw == word:
                 self.keywords.pop(i)
         config.read('./config/config.ini')
-        kw_file_path = config['DEFAULT']['KeywordsPath']
+        kw_file_path = config['Keywords']['Path']
         with open(kw_file_path, "w") as keyword_file:
             keyword_file.writelines(kw + '\n' for kw in self.keywords)
         self.listbox.delete(idx)
@@ -444,22 +412,38 @@ class ContextSizeForm(Toplevel):
         words_minus_label = Label(self, text="Words Before Keyword:")
         words_minus_label.grid(column=0, row=0, sticky='w', padx=10, pady=3)
         
-        words_minus_entry = Entry(self, width=3, bd=1)
-        words_minus_entry.grid(column=1, row=0, sticky='e', padx=10, pady=3)
+        self.words_minus_entry = Entry(self, width=3, bd=1)
+        self.words_minus_entry.grid(column=1, row=0, sticky='e', padx=10, pady=3)
         
         words_plus_label = Label(self, text="Words After Keyword:")
         words_plus_label.grid(column=0, row=1, sticky='w', padx=10, pady=3)
         
-        words_plus_entry = Entry(self, width=3, bd=1)
-        words_plus_entry.grid(column=1, row=1, sticky='e', padx=10, pady=3)
+        self.words_plus_entry = Entry(self, width=3, bd=1)
+        self.words_plus_entry.grid(column=1, row=1, sticky='e', padx=10, pady=3)
 
-        done_btn = Button(self, text='Done', command=self.destroy)
+        done_btn = Button(self, text='Apply', command=self._set_context_settings)
         done_btn.bind("<Enter>", on_enter)
         done_btn.bind("<Leave>", on_leave)
         done_btn.grid(column=0, row=3, columnspan=2, pady=3)
         
+        self._get_context_settings()
         center(self)
         self.attributes('-alpha', 1.0)
+
+    def _get_context_settings(self):
+        config.read('./config/config.ini')
+        self.words_minus_entry.insert(0, config['Keywords']['ContextBefore'])
+        self.words_plus_entry.insert(0, config['Keywords']['ContextAfter'])
+
+    def _set_context_settings(self):
+        context_before = self.words_minus_entry.get()
+        context_after = self.words_plus_entry.get()
+
+        config.read('./config/config.ini')
+        config['Keywords']['ContextBefore'] = context_before
+        config['Keywords']['ContextAfter'] = context_after
+        with open('./config/config.ini', 'w') as configfile:
+            config.write(configfile)
 
 class StatusBar(Frame):
     
@@ -484,9 +468,9 @@ class StatusBar(Frame):
     
     def _get_app_version(self):
         config.read('./config/config.ini')
-        maj = config['DEFAULT']['AppMajorVersion']
-        min = config['DEFAULT']['AppMinorVersion']
-        patch = config['DEFAULT']['AppPatchVersion']
+        maj = config['Application']['MajorVersion']
+        min = config['Application']['MinorVersion']
+        patch = config['Application']['PatchVersion']
         self.version.config(text=f"v{maj}.{min}.{patch}")
 
 class MenuBar(Menu):
@@ -496,13 +480,12 @@ class MenuBar(Menu):
 
         self.filemenu = Menu(self, tearoff=0)
         self.filemenu.add_command(label='New Summary', command=self._new_summary_form)
-        self.filemenu.add_command(label='Open Summary')
         self.filemenu.add_command(label="Exit", command=self.parent.destroy)
         self.add_cascade(label="File", menu=self.filemenu)
 
         self.actions_menu = Menu(self, tearoff=0)
         self.actions_menu.add_command(label="Scan PDF for Keywords", command=self._run_keyword_scan)
-        self.actions_menu.add_command(label="Scrape Comments from PDF", command=run_commentscraper)
+        self.actions_menu.add_command(label="Scrape Comments from PDF", command=self._run_comment_scrape)
         self.add_cascade(label="Actions", menu=self.actions_menu)
         
         self.settingsmenu = Menu(self, tearoff=0)
@@ -519,7 +502,7 @@ class MenuBar(Menu):
         self.keyword_settings_form = KeywordSettingsForm(self)
 
     def _open_context_size_menu(self):
-        self.context_size_form = ContextSizeForm(self)        
+        self.context_size_form = ContextSizeForm(self)
 
     def _get_help(self):
         quotes = [
@@ -538,7 +521,7 @@ class MenuBar(Menu):
     def _run_keyword_scan(self):
         pdf_path = get_file_path()
         debut = perf_counter()
-        output = scanforkeywords(pdf_path, self.parent)
+        output = scan_for_keywords(pdf_path, self.parent)
         fin = perf_counter()
         output_path = get_save_path('csv')
         with open(output_path,'w',encoding='utf-8', newline='') as f:
@@ -548,52 +531,16 @@ class MenuBar(Menu):
             csvdw.writerows(output)
         print(f"Completed in {fin - debut:0.4f}s")
 
+    def _run_comment_scrape(self):
+        pdf_path = get_file_path()
+        comments = scan_for_comments(pdf_path)
+        print(comments)
+
     def set_app_status(self, message):
         self.parent.set_status(message)
 
-
 def findWholeWord(w):
     return re.compile(r'\b^({0})$\b'.format(w), flags=re.IGNORECASE).search
-
-def run_keyword_scan():
-
-    fieldnames = ['keyword', 'page', 'text', 'exhibit', 'provider', 'exhibit_page']
-
-    pdf_path = get_file_path()
-    debut = perf_counter()
-    output = scanforkeywords(pdf_path)
-    fin = perf_counter()
-    output_path = get_save_path()
-    with open(output_path,'w',encoding='utf-8', newline='') as f:
-        csvdw = DictWriter(f, fieldnames=fieldnames)
-        csvdw.writeheader()
-        csvdw.writerows(output)
-    print(f"Completed in {fin - debut:0.4f}s")
-    return
-
-def read_keywords_file():
-    with open(r".\\config\\keywords", "r") as keyword_file:
-        file_content = keyword_file.read()
-        keywords = file_content.split('\n')
-        keywords = [w for w in keywords if w]
-        keywords.sort()
-    return keywords
-
-def add_keyword(word, entrybox):
-    entrybox.delete(0, END)
-    with open(r".\\config\\keywords", "a") as keyword_file:
-        keyword_file.write(word + '\n')
-    return
-
-def delete_keyword(word):
-    keywords = read_keywords_file()
-    for i, kw in enumerate(keywords):
-        if kw == word:
-            keywords.pop(i)
-    
-    with open(r".\\config\\keywords", "w") as keyword_file:
-        keyword_file.writelines(kw + '\n' for kw in keywords)
-    return
 
 def run_commentscraper():
     scrape_comments()

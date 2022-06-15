@@ -6,6 +6,7 @@ from pdfminer.pdfdocument import PDFDocument, PDFNoOutlines
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
+from pdfminer.pdftypes import PDFObjRef
 
 def scan_for_client_info(pdf_path):
     
@@ -21,8 +22,6 @@ def scan_for_client_info(pdf_path):
             device = TextConverter(rsrcmgr, output_string, laparams=LAParams())
             interpreter = PDFPageInterpreter(rsrcmgr, device)                                                    
             interpreter.process_page(page)            
-            #app.set_status(f'Processing page {pge}...')
-            #app.update()
             page_text = output_string.getvalue()
             lines = page_text.splitlines()
             lines = [line for line in lines if line]
@@ -32,6 +31,30 @@ def scan_for_client_info(pdf_path):
                 e = e.split(':')
                 client[e[0]] = e[1].lstrip()
             return client
+
+def scan_for_comments(pdf_path):
+
+    comments = []
+    with open(pdf_path, 'rb') as in_file: 
+        parser = PDFParser(in_file)
+        doc = PDFDocument(parser)
+        
+        for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
+            if page.annots:
+                for annot in page.annots:
+                    por = PDFObjRef.resolve(annot)
+                    if 'Contents' in por.keys():
+                        try:
+                            text = por['Contents'].decode('utf-8', 'ignore')
+                        except UnicodeDecodeError as e:
+                            text = por['Contents']
+                            print(por['Contents'])
+                        data = {
+                            'page': pagenumber,
+                            'text': text
+                        }
+                        comments.append(data)
+    return comments                      
 
 def scan_for_date_of_birth(pdf_path = "C:\\Users\\Owner\\Downloads\\2846269-richard_herrera-case_file_exhibited_bookmarked-6-07-2022-1654613771 (1).pdf"):
     
@@ -54,15 +77,8 @@ def scan_for_date_of_birth(pdf_path = "C:\\Users\\Owner\\Downloads\\2846269-rich
             print(page_text)
             #lines = page_text.splitlines()
             #print(lines)
-            """ lines = [line for line in lines if line]
-            client_data = lines[:6]
-            client = {}
-            for e in client_data:
-                e = e.split(':')
-                client[e[0]] = e[1].lstrip()
-            return client """
 
-def scanforkeywords(pdf_path, app):
+def scan_for_keywords(pdf_path, app):
     
     with open(r".\\config\\keywords\\default", "r") as keyword_file:
         file_content = keyword_file.read()
