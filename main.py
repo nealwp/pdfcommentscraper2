@@ -565,7 +565,7 @@ class MenuBar(Menu):
             "It's hard to beat a person who never gives up.",
             "Impossible is just an opinion.",
             "Have you tried turning it off and back on again?",
-            "There are no problems; only solutions."
+            "There are no problems; only solutions.",
             "Ready."
         ]
         self.parent.status_bar._set_status(random.choice(quotes))
