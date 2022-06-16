@@ -1,7 +1,9 @@
+from time import strftime
 import docx
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_UNDERLINE
 from docx.enum.style import WD_STYLE_TYPE
+from datetime import datetime
 
 def generate_medical_summary(data):
     doc = docx.Document()
@@ -48,7 +50,11 @@ def generate_medical_summary(data):
     para.style = doc.styles['Normal 2']
 
     for comment in data['comments']:
-        doc.add_paragraph(f'{comment["text"]}')
+        p = doc.add_paragraph()
+        p.add_run(f'{datetime.strftime(comment["date"], "%m/%d/%Y")}: ').bold = True
+        p.add_run(f'{comment["text"]}\n')
+        p.add_run(f'\tExhibit: {comment["ref"]}').bold = True
+        p.add_run(f'\tPDF pg. {comment["page"]}').italic = True
 
     for section in doc.sections:
         section.left_margin = Inches(1)

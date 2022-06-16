@@ -8,6 +8,40 @@ from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdftypes import PDFObjRef
 
+from datetime import datetime
+
+def parse_comment(comment):
+    comment = comment.split(";")
+    date = datetime.strptime(comment[0], '%m/%d/%Y')
+    text = comment[1].replace("\r", " ")
+    provider = comment[2]
+    data = {
+        'date': date,
+        'text': text,
+        'provider': provider
+    }
+    return data
+
+def scan_for_exhibit_data(pdf_path):
+    with open(pdf_path, 'rb') as in_file: 
+        parser = PDFParser(in_file)
+        doc = PDFDocument(parser)
+        try:
+            outlines = doc.get_outlines()
+            index = 1
+            provider = ''
+            exhibit_data = {index: {'provider': '','ref': ''}}
+            for (level, title, dest, a, se) in outlines:
+                if level == 2:
+                    provider = title
+                if level == 3:
+                    index += 1
+                    exhibit_data[index] = {'provider': provider,'ref': title}
+        except PDFNoOutlines as e:
+            exhibit_data = {}
+            print('PDF has no outlines to reference.')
+    return exhibit_data
+
 def scan_for_client_info(pdf_path):
     
     with open(pdf_path, 'rb') as in_file: 
@@ -38,6 +72,22 @@ def scan_for_comments(pdf_path):
     with open(pdf_path, 'rb') as in_file: 
         parser = PDFParser(in_file)
         doc = PDFDocument(parser)
+
+        try:
+            outlines = doc.get_outlines()
+            index = 1
+            provider = ''
+            exhibit_data = {index: {'provider': '','ref': ''}}
+            for (level, title, dest, a, se) in outlines:
+                if level == 2:
+                    provider = title
+                if level == 3:
+                    index += 1
+                    ref = f'{provider.split(":")[0]}-{title.split()[1]}'
+                    exhibit_data[index] = {'provider': provider,'ref': ref}
+        except PDFNoOutlines as e:
+            exhibit_data = {}
+            print('PDF has no outlines to reference.')
         
         for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
             if page.annots:
@@ -49,11 +99,19 @@ def scan_for_comments(pdf_path):
                         except UnicodeDecodeError as e:
                             text = por['Contents']
                             print(por['Contents'])
+                        comment = parse_comment(text)
                         data = {
                             'page': pagenumber,
-                            'text': text
+                            'date': comment['date'], 
+                            'text': comment['text'],
+                            'provider': comment['provider'],
+                            'pagehead': exhibit_data[pagenumber]['provider'],
+                            'ref': exhibit_data[pagenumber]['ref']
                         }
                         comments.append(data)
+    
+    comments = sorted(comments, key=lambda el: el['date'])
+    print(comments)
     return comments                      
 
 def scan_for_date_of_birth(pdf_path = "C:\\Users\\Owner\\Downloads\\2846269-richard_herrera-case_file_exhibited_bookmarked-6-07-2022-1654613771 (1).pdf"):
@@ -172,6 +230,11 @@ def scan_for_keywords(pdf_path, app):
     print('\nfinds: ' + str(resultCount))
     print('done')
     return output
+
+
+
+def scan_pdf_for_summary(pdf_path):
+    return
 
 if __name__ == '__main__':
     scan_for_date_of_birth()

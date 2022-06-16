@@ -1,9 +1,11 @@
 import random
 import re
+from textwrap import wrap
 from time import perf_counter
 from csv import writer, DictWriter
-from tkinter import BOTH, END, LEFT, LabelFrame, Listbox, Scrollbar, StringVar, Text, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X
+from tkinter import BOTH, END, LEFT, Canvas, LabelFrame, Listbox, Scrollbar, StringVar, Text, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X
 from tkinter.ttk import Combobox
+from cv2 import exp
 from tkcalendar import Calendar, DateEntry
 from commentscraper import scrape_comments
 from pdfscanner import scan_for_keywords, scan_for_client_info, scan_for_comments
@@ -63,11 +65,6 @@ class SummaryForm(Toplevel):
         self.detect_client_btn.bind("<Enter>", on_enter)
         self.detect_client_btn.bind("<Leave>", on_leave)
         self.detect_client_btn.grid(column=0, row=0, sticky='w', padx=10, pady=2)
-
-        self.get_comments_btn = Button(self, text="Detect PDF Comments", command=self._scan_for_comments)
-        self.get_comments_btn.bind("<Enter>", on_enter)
-        self.get_comments_btn.bind("<Leave>", on_leave)
-        self.get_comments_btn.grid(column=1, row=0, sticky='w', padx=10, pady=2)
 
         self.name_label = Label(self, text="Client Name:")
         self.name_label.grid(column=0, row=1, sticky='w', padx=10, pady=2)
@@ -160,16 +157,26 @@ class SummaryForm(Toplevel):
         self.work_history_frame = LabelFrame(self, text="Work History")
         self.work_history_frame.grid(column=2, row=1, columnspan=2, rowspan=12, sticky='n', pady=10)
 
-        
+        self.get_comments_btn = Button(self, text="Detect PDF Comments", width=18, command=self._scan_for_comments)
+        self.get_comments_btn.bind("<Enter>", on_enter)
+        self.get_comments_btn.bind("<Leave>", on_leave)
+        self.get_comments_btn.grid(column=4, row=0, sticky='w', padx=10, pady=2)
+
+        self.comment_count_label = Label(self, text="Comments Found: N/A", width=18)
+        self.comment_count_label.grid(column=4, row=1, sticky='w', padx=10, pady=2)
+        #self.view_comments_btn = Button(self, text="View PDF Comments", width=18, state='disabled', command=self._view_comments)
+        #self.view_comments_btn.grid(column=4, row=1, sticky='w', padx=10, pady=2)
+
+
         cancel_btn = Button(self, text='Cancel', width=20, command=self.destroy)
         cancel_btn.bind("<Enter>", on_enter)
         cancel_btn.bind("<Leave>", on_leave)
-        cancel_btn.grid(column=0, row=99, columnspan=2, pady=4)
+        cancel_btn.grid(column=0, row=99, columnspan=2, padx=10, pady=4)
 
         done_btn = Button(self, text='Generate Summary', width=20, command=self._save_to_file)
         done_btn.bind("<Enter>", on_enter)
         done_btn.bind("<Leave>", on_leave)
-        done_btn.grid(column=1, row=99, columnspan=2, pady=4)
+        done_btn.grid(column=1, row=99, columnspan=2, padx=10, pady=4)
 
         center(self)
         self.attributes('-alpha', 1.0)
@@ -201,9 +208,18 @@ class SummaryForm(Toplevel):
             self.pdf_path = get_file_path()
         
         self.pdf_comments = scan_for_comments(self.pdf_path)
+        
+        comment_count = len(self.pdf_comments)
+        self.comment_count_label.configure(text=f'Comments Found: {comment_count}')
+        #self.view_comments_btn.configure(state='normal')
+        #self.view_comments_btn.bind("<Enter>", on_enter)
+        #self.view_comments_btn.bind("<Leave>", on_leave)
+        
         self.update()
         self.deiconify()
 
+    def _view_comments(self):
+        self.comment_viewer = CommentViewer(self)
 
     def _save_to_file(self):
         
@@ -246,6 +262,44 @@ class SummaryForm(Toplevel):
         self.parent.parent.status_bar._set_status('Data Saved')
         self.destroy()
         return
+
+class CommentViewer(Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent, padx=15, pady=15)
+        self.parent = parent
+        self.attributes('-alpha', 0.0)
+        self.title('Work History')
+
+        self.container = Frame(self)
+        self.canvas = Canvas(self.container)
+        self.scrollbar = Scrollbar(self.container, orient='vertical', command=self.canvas.yview)
+        self.scrollable_frame = Frame(self.canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(
+                scrollregion=self.canvas.bbox("all")
+            )
+        )
+
+        self.canvas.create_window((0,0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        
+        for row, comment in enumerate(self.parent.pdf_comments):
+            txtbox = Label(self.scrollable_frame, wraplength=500, justify=LEFT, bg="white", borderwidth=1)
+            txtbox.configure(text=comment['text'])
+            txtbox.pack()
+            #txtbox.configure(state='disabled')
+
+        self.container.pack()
+        self.canvas.pack(side='left', fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+        
+        self.close_btn = Button(self, text='Close', width=12, command=self.destroy)
+        self.close_btn.pack()
+
+        center(self)
+        self.attributes('-alpha', 1.0)
 
 class WorkHistoryForm(Toplevel):
     def __init__(self, parent):
