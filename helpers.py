@@ -1,6 +1,3 @@
-from time import perf_counter
-from string import printable
-
 from csv import writer, DictWriter, QUOTE_MINIMAL
 
 from os import path, remove, system
@@ -30,7 +27,7 @@ def get_file_path() -> str:
 
 def get_save_path(file_type) -> str:
     """ Displays save as dialog and return a file path """
-    Tk().withdraw()
+    #Tk().withdraw()
     types = {
         'csv': ('CSV Files', '*.csv'),
         'docx': ('MS Word Files', '*.docx')

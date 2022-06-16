@@ -111,7 +111,6 @@ def scan_for_comments(pdf_path):
                         comments.append(data)
     
     comments = sorted(comments, key=lambda el: el['date'])
-    print(comments)
     return comments                      
 
 def scan_for_date_of_birth(pdf_path = "C:\\Users\\Owner\\Downloads\\2846269-richard_herrera-case_file_exhibited_bookmarked-6-07-2022-1654613771 (1).pdf"):
@@ -232,9 +231,11 @@ def scan_for_keywords(pdf_path, app):
     return output
 
 
-
 def scan_pdf_for_summary(pdf_path):
     return
 
+def main():
+    return
+
 if __name__ == '__main__':
-    scan_for_date_of_birth()
+    main()

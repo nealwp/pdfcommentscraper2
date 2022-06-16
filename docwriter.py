@@ -52,9 +52,8 @@ def generate_medical_summary(data):
     for comment in data['comments']:
         p = doc.add_paragraph()
         p.add_run(f'{datetime.strftime(comment["date"], "%m/%d/%Y")}: ').bold = True
-        p.add_run(f'{comment["text"]}\n')
-        p.add_run(f'\tExhibit: {comment["ref"]}').bold = True
-        p.add_run(f'\tPDF pg. {comment["page"]}').italic = True
+        p.add_run(f'{comment["text"]}')
+        p.add_run(f' [Exhibit: {comment["ref"]}]').bold = True
 
     for section in doc.sections:
         section.left_margin = Inches(1)
