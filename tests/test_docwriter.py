@@ -5,7 +5,7 @@ sys.path.append('../')
 import pdfcommentscraper2.docwriter as docwriter
 
 def test_generate_medical_summary():
-    """ Should return an obj of type docx """
+    """ Should return an object of type docx.document.Document """
     empty_data = {
             'client_name': '',
             'client_ssn': '',

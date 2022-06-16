@@ -1,11 +1,9 @@
 import random
 import re
-from textwrap import wrap
 from time import perf_counter
 from csv import writer, DictWriter
 from tkinter import BOTH, END, LEFT, Canvas, LabelFrame, Listbox, Scrollbar, StringVar, Text, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X
 from tkinter.ttk import Combobox
-from cv2 import exp
 from tkcalendar import Calendar, DateEntry
 from commentscraper import scrape_comments
 from pdfscanner import scan_for_keywords, scan_for_client_info, scan_for_comments
