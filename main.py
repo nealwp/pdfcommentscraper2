@@ -6,13 +6,13 @@ from tkinter import BOTH, END, LEFT, Canvas, LabelFrame, Listbox, Scrollbar, Str
 from tkinter.ttk import Combobox
 from tkcalendar import Calendar, DateEntry
 from commentscraper import scrape_comments
-from pdfscanner import scan_for_keywords, scan_for_client_info, scan_for_comments
-from docwriter import generate_medical_summary
+from pdfscanner import scan_for_keywords, scan_for_comments, scan_pdf_for_summary
+from docwriter import generate_chronological_medical_summary, generate_tablular_medical_summary
 
 from configparser import ConfigParser
 import json
 
-from helpers import write_csv, get_file_path, get_save_path
+from helpers import write_csv, get_file_path, get_save_path, get_age, get_age_at_onset
 
 config = ConfigParser()
 
@@ -59,10 +59,15 @@ class SummaryForm(Toplevel):
         self.attributes('-alpha', 0.0)
         self.title('New Summary')
         
-        self.detect_client_btn = Button(self, text="Detect Client Info", command=self._detect_client_info)
+        self.detect_client_btn = Button(self, text="Get Data from PDF", command=self._get_summary_data)
         self.detect_client_btn.bind("<Enter>", on_enter)
         self.detect_client_btn.bind("<Leave>", on_leave)
         self.detect_client_btn.grid(column=0, row=0, sticky='w', padx=10, pady=2)
+
+        self.comment_count_label = Label(self, text="Comments Found: N/A", width=18)
+        self.comment_count_label.grid(column=1, row=0, sticky='w', padx=10, pady=2)
+        #self.view_comments_btn = Button(self, text="View PDF Comments", width=18, state='disabled', command=self._view_comments)
+        #self.view_comments_btn.grid(column=4, row=1, sticky='w', padx=10, pady=2)
 
         self.name_label = Label(self, text="Client Name:")
         self.name_label.grid(column=0, row=1, sticky='w', padx=10, pady=2)
@@ -140,31 +145,19 @@ class SummaryForm(Toplevel):
         self.criminal_combo.grid(column=1, row=11, sticky='e', padx=10, pady=2)
         self.criminal_combo.current(0)
 
-        self.overview_label = Label(self, text="Case Overview:")
+        self.overview_label = Label(self, text="Evaluation:")
         self.overview_label.grid(column=0, row=12, sticky='w', padx=10, pady=2)
 
-        self.overview_text = Text(self, height=6, font='Calibri', wrap='word')
+        self.overview_text = Text(self, height=4, font='Calibri', wrap='word')
         self.overview_text.grid(column=0, row=13, columnspan=4, rowspan=2, padx=10, pady=2)
 
         self.add_work_history_btn = Button(self, text="Add Work History", command=self._open_work_history_form)
         self.add_work_history_btn.bind("<Enter>", on_enter)
         self.add_work_history_btn.bind("<Leave>", on_leave)
         self.add_work_history_btn.grid(column=2, row=0, columnspan=2)
-
         
         self.work_history_frame = LabelFrame(self, text="Work History")
         self.work_history_frame.grid(column=2, row=1, columnspan=2, rowspan=12, sticky='n', pady=10)
-
-        self.get_comments_btn = Button(self, text="Detect PDF Comments", width=18, command=self._scan_for_comments)
-        self.get_comments_btn.bind("<Enter>", on_enter)
-        self.get_comments_btn.bind("<Leave>", on_leave)
-        self.get_comments_btn.grid(column=4, row=0, sticky='w', padx=10, pady=2)
-
-        self.comment_count_label = Label(self, text="Comments Found: N/A", width=18)
-        self.comment_count_label.grid(column=4, row=1, sticky='w', padx=10, pady=2)
-        #self.view_comments_btn = Button(self, text="View PDF Comments", width=18, state='disabled', command=self._view_comments)
-        #self.view_comments_btn.grid(column=4, row=1, sticky='w', padx=10, pady=2)
-
 
         cancel_btn = Button(self, text='Cancel', width=20, command=self.destroy)
         cancel_btn.bind("<Enter>", on_enter)
@@ -186,7 +179,7 @@ class SummaryForm(Toplevel):
         if not self.pdf_path:
             self.pdf_path = get_file_path()
 
-        client_info = scan_for_client_info(self.pdf_path)
+        client_info = "" #scan_for_client_info(self.pdf_path)
         self.name_entry.insert(0, client_info['Claimant'])
         self.ssn_entry.insert(0, client_info['SSN'])
         self.onset_date_entry.insert(0, client_info['Alleged Onset'])
@@ -216,6 +209,33 @@ class SummaryForm(Toplevel):
         self.update()
         self.deiconify()
 
+    def _get_summary_data(self):
+        if not self.pdf_path:
+            self.pdf_path = get_file_path()
+        self.deiconify()
+        self.summary_data = scan_pdf_for_summary(self.pdf_path)
+        self._fill_entry_fields()
+        self.update()
+        
+        
+
+    def _fill_entry_fields(self):
+        client = self.summary_data['client']
+        self.pdf_comments = self.summary_data['comments']
+        self.work_history = self.summary_data['work_history']
+
+        self.name_entry.insert(0, client['Claimant'])
+        self.ssn_entry.insert(0, client['SSN'])
+        self.onset_date_entry.insert(0, client['Alleged Onset'])
+        self.title_entry.insert(0, client['Claim Type'])
+        self.application_date_entry.insert(0, client['Application'])
+        self.birthday_entry.insert(0, client['Date of Birth'])
+        self.insured_date_entry.insert(0, client['Last Insured'])
+
+        comment_count = len(self.pdf_comments)
+        self.comment_count_label.configure(text=f'Comments Found: {comment_count}')
+        self._paint_work_history()
+
     def _view_comments(self):
         self.comment_viewer = CommentViewer(self)
 
@@ -236,6 +256,14 @@ class SummaryForm(Toplevel):
         overview = self.overview_text.get('1.0', 'end-1c')
         comments = self.pdf_comments
 
+        if birthdate:
+            age = get_age(birthdate)
+        else: age = ''
+
+        if birthdate and onset_date:
+            age_at_onset = get_age_at_onset(birthdate, onset_date)
+        else: age_at_onset =''
+
         data = {
             'client_name': client_name,
             'client_ssn': client_ssn,
@@ -245,6 +273,8 @@ class SummaryForm(Toplevel):
             'insured_date': insured_date,
             'prior_applications': prior_applications,
             'birthdate': birthdate,
+            'age': age,
+            'age_at_onset': age_at_onset,
             'education': education,
             'work_history': work_history,
             'drug_use': drug_use,
@@ -253,7 +283,7 @@ class SummaryForm(Toplevel):
             'comments': comments
         }
 
-        doc = generate_medical_summary(data)
+        doc = generate_tablular_medical_summary(data)
         output_path = get_save_path('docx')
         doc.save(output_path)
 

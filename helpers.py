@@ -5,6 +5,7 @@ from re import sub
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import asksaveasfilename
+from datetime import date, datetime
 
 def write_csv(file_name: str, heads: list, rows: list) -> None:
     """ Take a path, header list, and 2D list of data rows and writes to CSV file """
@@ -20,14 +21,11 @@ def write_csv(file_name: str, heads: list, rows: list) -> None:
 
 def get_file_path() -> str:
     """ Displays open dialog and returns a file path """
-    #Tk().withdraw()
     file_path = askopenfilename(filetypes=[("PDF files", "*.pdf")])
     return file_path
 
-
 def get_save_path(file_type) -> str:
     """ Displays save as dialog and return a file path """
-    #Tk().withdraw()
     types = {
         'csv': ('CSV Files', '*.csv'),
         'docx': ('MS Word Files', '*.docx')
@@ -42,3 +40,15 @@ def strip_non_printable_chars(str) -> str:
     fixed = sub('[^A-Za-z0-9\.\,\!\:\;\(\)\'\"\\n\-\/]+', ' ', str)
     #fixed = ''.join(filter(lambda x: x in printable, str))
     return fixed
+
+def get_age(birthdate):
+    today = date.today()
+    birthdate = datetime.strptime(birthdate, '%m/%d/%Y')
+    age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+    return age
+
+def get_age_at_onset(birthdate, onset_date):
+    birthdate = datetime.strptime(birthdate, '%m/%d/%Y')
+    onset_date = datetime.strptime(onset_date, '%m/%d/%Y')
+    age_at_onset = onset_date.year - birthdate.year - ((onset_date.month, onset_date.day) < (birthdate.month, birthdate.day))
+    return age_at_onset
