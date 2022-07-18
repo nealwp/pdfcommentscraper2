@@ -213,10 +213,10 @@ def scan_for_keywords(pdf_path, app):
             interpreter.process_page(page)
             pge += 1
             
-            if pge > 3:
-                break
+            #if pge > 3:
+            #    break
             print(" [%d]\r"%pge, end="")
-            app.status_bar.set_status(f'Processing page {pge}...')
+            app.status_bar._set_status(f'Processing page {pge}...')
             app.update()
             page_text = output_string.getvalue()
             list_text = list(page_text.split(" "))
@@ -250,7 +250,7 @@ def scan_for_keywords(pdf_path, app):
                     resultCount += 1
             output_string.close()
             
-    app.set_status(f'Done. Pages Scanned: {pge} - Keyword Results: {resultCount}')
+    app.status_bar._set_status(f'Done. Pages Scanned: {pge} - Keyword Results: {resultCount}')
     app.update()
     print('\nfinds: ' + str(resultCount))
     print('done')
