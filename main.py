@@ -333,6 +333,8 @@ class WorkHistoryForm(Toplevel):
     def __init__(self, parent):
         super().__init__(parent, padx=15, pady=15)
         self.parent = parent
+        self.intensity_options = ('Light', 'Medium', 'Heavy', 'Sedentary')
+        self.skill_level_options = ('Unskilled', 'Semi-Skilled', 'Skilled')
         self.attributes('-alpha', 0.0)
         self.title('Work History')
 
@@ -347,7 +349,7 @@ class WorkHistoryForm(Toplevel):
 
         self.intensity_txtVar = StringVar()
         self.intensity_combo = Combobox(self, textvariable=self.intensity_txtVar, justify='left')
-        self.intensity_combo['values'] = ('Light', 'Medium', 'Heavy')
+        self.intensity_combo['values'] = self.intensity_options
         self.intensity_combo.grid(column=1, row=1, padx=10, pady=2)
         self.intensity_combo.current(0)
 
@@ -356,7 +358,7 @@ class WorkHistoryForm(Toplevel):
 
         self.skill_level_txtVar = StringVar()
         self.skill_level_combo = Combobox(self, textvariable=self.skill_level_txtVar, justify='left')
-        self.skill_level_combo['values'] = ('Unskilled', 'Semi-Skilled', 'Skilled')
+        self.skill_level_combo['values'] = self.skill_level_options
         self.skill_level_combo.grid(column=2, row=1, padx=10, pady=2)
         self.skill_level_combo.current(0)
 
@@ -614,6 +616,7 @@ class MenuBar(Menu):
         print(f"Completed in {fin - debut:0.4f}s")
 
     def _run_comment_scrape(self):
+        # run_commentscraper()
         pdf_path = get_file_path()
         comments = scan_for_comments(pdf_path)
         print(comments)

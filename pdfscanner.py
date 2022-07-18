@@ -85,7 +85,8 @@ def scan_for_comments(pdf_path):
         
         for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
             if page.annots:
-                for annot in page.annots:
+                annotations = list(page.annots)
+                for annot in annotations:
                     por = PDFObjRef.resolve(annot)
                     if 'Contents' in por.keys():
                         try:
