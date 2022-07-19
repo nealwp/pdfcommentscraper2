@@ -1,3 +1,5 @@
+import sys
+import re
 from io import StringIO
 from time import perf_counter
 
@@ -11,8 +13,6 @@ from pdfminer.pdftypes import PDFObjRef
 from pdfminer.high_level import extract_text_to_fp
 
 from datetime import datetime
-
-import re
 
 def parse_comment(comment):
     comment = comment.split(";")
@@ -174,6 +174,7 @@ def scan_for_keywords(pdf_path, app):
         doc = PDFDocument(parser)
         try:
             outlines = doc.get_outlines()
+            sys.setrecursionlimit(2000)
             index = 1
             provider = ''
             page_metadata = {index: {'provider': '','exhibit_page': ''}}
@@ -255,6 +256,7 @@ def scan_for_keywords(pdf_path, app):
     app.update()
     print('\nfinds: ' + str(resultCount))
     print('done')
+    sys.setrecursionlimit(1000)
     return output
 
 
