@@ -17,11 +17,15 @@ jobs:
       - run: echo "short_sha=`echo ${GITHUB_SHA::7}`" >> GITHUB_ENV 
       - run: pyinstaller --noconfirm --onedir --windowed --distpath "./dist-${GITHUB_SHA::7}" --add-data './config:config/' './main.py'
       - run: ls -l
+
+      - name: Set output
+        id: vars
+        run: echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
       
       - name: Upload dist
         uses: actions/upload-artifact@v3
         with:
-          name: dist-${{ github.short_sha }}
-          path: dist-${{ github.short_sha }}/**
+          name: dist-${{ steps.vars.outputs.short_sha }}
+          path: dist-${{ steps.vars.outputs.short_sha }}/**
       - run: ls -l
 
