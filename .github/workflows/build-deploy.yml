@@ -13,5 +13,13 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
+      - run: commit=$(git rev-parse --short HEAD)
       - run: pip install -r requirements.txt
-      - run: pyinstaller --noconfirm --onedir --windowed --distpath './dist' --add-data './config:config/' './main.py'
+      - run: pyinstaller --noconfirm --onedir --windowed --distpath './dist-$commit' --add-data './config:config/' './main.py'
+      
+      - name: Upload dist
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist
+
