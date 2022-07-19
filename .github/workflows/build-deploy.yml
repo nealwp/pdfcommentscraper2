@@ -16,7 +16,7 @@ jobs:
       - run: pip install -r requirements.txt
       - run: echo "short_sha=`echo ${GITHUB_SHA::7}`" >> GITHUB_ENV 
       - run: pyinstaller --noconfirm --onedir --windowed --distpath "./dist-${GITHUB_SHA::7}" --add-data './config:config/' './main.py'
-      - run: ls -l
+      - run: tar czf dist-${GITHUB_SHA::7}.tar.gz ./dist-${GITHUB_SHA::7}/*
 
       - name: Set output
         id: vars
@@ -25,7 +25,7 @@ jobs:
       - name: Upload dist
         uses: actions/upload-artifact@v3
         with:
-          name: dist-${{ steps.vars.outputs.short_sha }}
-          path: dist-${{ steps.vars.outputs.short_sha }}/**
+          name: dist-${{ steps.vars.outputs.short_sha }}.tar.gz
+          path: dist-${{ steps.vars.outputs.short_sha }}.tar.gz
       - run: ls -l
 
