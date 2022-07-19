@@ -15,11 +15,11 @@ jobs:
           cache: 'pip'
       - run: pip install -r requirements.txt
       - run: echo ${GITHUB_SHA::7}
-      - run: pyinstaller --noconfirm --onedir --windowed --distpath "./dist-${GITHUB_SHA::7}" --add-data './config:config/' './main.py'
+      - run: pyinstaller --noconfirm --onedir --windowed --distpath './dist-${GITHUB_SHA::7}' --add-data './config:config/' './main.py'
       
       - name: Upload dist
         uses: actions/upload-artifact@v3
         with:
-          name: dist-${GITHUB_SHA::7}
-          path: dist-${GITHUB_SHA::7}
+          name: ./dist-${GITHUB_SHA::7}
+          path: ./dist-${GITHUB_SHA::7}
 
