@@ -20,8 +20,8 @@ jobs:
       
       - name: Upload dist
         uses: actions/upload-artifact@v3
-        run: ls -l
         with:
           name: dist-${GITHUB_SHA::7}
           path: dist-${GITHUB_SHA::7}/**
+      - run: ls -l
 
