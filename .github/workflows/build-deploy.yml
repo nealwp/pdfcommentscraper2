@@ -13,13 +13,12 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
-      - run: echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
       - run: pip install -r requirements.txt
-      - run: pyinstaller --noconfirm --onedir --windowed --distpath "./dist-$SHORT_SHA" --add-data './config:config/' './main.py'
+      - run: pyinstaller --noconfirm --onedir --windowed --distpath "./dist-${GITHUB_SHA::7}" --add-data './config:config/' './main.py'
       
       - name: Upload dist
         uses: actions/upload-artifact@v3
         with:
-          name: dist-${SHORT_SHA}
-          path: dist-${SHORT_SHA}
+          name: dist-${GITHUB_SHA::7}
+          path: dist-${GITHUB_SHA::7}
 
