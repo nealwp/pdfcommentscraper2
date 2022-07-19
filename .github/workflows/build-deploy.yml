@@ -14,14 +14,14 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
       - run: pip install -r requirements.txt
-      - run: echo ${GITHUB_SHA::7}
+      - run: echo "short_sha=`${GITHUB_SHA::7}`" >> GITHUB_ENV 
       - run: pyinstaller --noconfirm --onedir --windowed --distpath "./dist-${GITHUB_SHA::7}" --add-data './config:config/' './main.py'
       - run: ls -l
       
       - name: Upload dist
         uses: actions/upload-artifact@v3
         with:
-          name: dist-${{ github.sha::7 }}
-          path: dist-${{ github.sha::7 }}/**
+          name: dist-${{ github.short_sha }}
+          path: dist-${{ github.short_sha }}/**
       - run: ls -l
 
