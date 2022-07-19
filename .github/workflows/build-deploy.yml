@@ -21,7 +21,7 @@ jobs:
       - name: Upload dist
         uses: actions/upload-artifact@v3
         with:
-          name: dist-${GITHUB_SHA::7}
-          path: dist-${GITHUB_SHA::7}/**
+          name: dist-${{ github.sha::7 }}
+          path: dist-${{ github.sha::7 }}/**
       - run: ls -l
 
