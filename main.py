@@ -2,12 +2,15 @@ import random
 import re
 from time import perf_counter
 from csv import writer, DictWriter
-from tkinter import BOTH, END, LEFT, Canvas, LabelFrame, Listbox, Scrollbar, StringVar, Text, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X
+from tkinter import BOTH, END, LEFT, Canvas, LabelFrame, Listbox, Scrollbar, StringVar, Text, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X, messagebox
 from tkinter.ttk import Combobox
 from tkcalendar import Calendar, DateEntry
 from commentscraper import scrape_comments
 from pdfscanner import scan_for_keywords, scan_for_comments, scan_pdf_for_summary
 from docwriter import generate_chronological_medical_summary, generate_tablular_medical_summary
+from pathlib import Path
+import subprocess
+import requests
 
 from configparser import ConfigParser
 import json
@@ -564,6 +567,7 @@ class MenuBar(Menu):
 
         self.filemenu = Menu(self, tearoff=0)
         self.filemenu.add_command(label='New Summary', command=self._new_summary_form)
+        self.filemenu.add_command(label='Check for Updates', command=self._check_for_updates)
         self.filemenu.add_command(label="Exit", command=self.parent.destroy)
         self.add_cascade(label="File", menu=self.filemenu)
 
@@ -581,6 +585,21 @@ class MenuBar(Menu):
 
     def _new_summary_form(self):
         self.summary_form = SummaryForm(self)
+
+    def _check_for_updates(self):
+        r = requests.get('http://localhost:3000/apps/disabilitydude/latest-version')
+        response = r.json()
+        url = response['url']
+        prompt_response = messagebox.askyesno('Update Available', 'A new update is available. Would you like to install now?')
+        if prompt_response == True:
+            messagebox.showinfo('Path', Path().absolute())
+            app_path = Path().absolute()
+            download_path = '%userprofile%\\AppData\\Local\\Temp\\disabilitydude.zip'
+            extract_path = '%userprofile%\\AppData\\Local\\Temp\\disabilitydude'
+            install_path = '%userprofile%\\AppData\\Local\\disabilitydude'
+            subprocess.Popen(f'{app_path}\install.bat {url} {download_path} {extract_path} {install_path}',
+                creationflags=subprocess.CREATE_NEW_CONSOLE)
+            self.parent.destroy()
 
     def _open_keywords_menu(self):
         self.keyword_settings_form = KeywordSettingsForm(self)
