@@ -16,6 +16,7 @@ pyinstaller `
     --add-data "./install.bat;install.bat" `
     "./main.py"
 
+$ProgressPreference = 'SilentlyContinue'
 Compress-Archive -Path .\dist\main -Destination ".\dist\$archive" -Force
 
 try {
@@ -25,19 +26,12 @@ try {
 }
 
 $body = @{
-    "version"="0.0.0"
-    "release_date"="$release"
-    "hash"="$hash"
+    "version"="0.0.0";
+    "release_date"="$release";
+    "hash"="$hash";
     "url"="https://s3.amazonaws.com/prestonneal.com/apps/$archive"
-} | ConvertTo-Json
-
-$header = @{
-    "Accept"="application/json"
-    "Content-Type"="application/json"
 }
 
-Invoke-RestMethod `
-    -Uri "http://localhost:3000/apps/disabilitydude" `
-    -Method "Post" `
-    -Body $body `
-    -Headers $header
+Invoke-WebRequest -Uri "http://localhost:3000/apps/disabilitydude" `
+    -Method POST `
+    -Body $body
