@@ -16,14 +16,14 @@ if ($IncludeOCR) {
     --distpath ".\dist" `
     --add-data "./config;config/" `
     --add-data "./lib;lib/" `
-    --add-data "./install.bat;install.bat" `
+    --add-data "./install.bat;./" `
     "./main.py"
 } else {
     pyinstaller `
     --noconfirm --onedir --windowed `
     --distpath ".\dist" `
     --add-data "./config;config/" `
-    --add-data "./install.bat;install.bat" `
+    --add-data "./install.bat;./" `
     "./main.py"
 }
 
