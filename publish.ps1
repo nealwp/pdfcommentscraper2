@@ -21,17 +21,19 @@ Compress-Archive -Path .\dist\main -Destination ".\dist\$archive" -Force
 
 try {
     aws s3 cp ".\dist\$archive" "s3://prestonneal.com/apps/$archive" --acl=public-read
+    
+    $body = @{
+        "version"="0.0.0";
+        "release_date"="$release";
+        "hash"="$hash";
+        "url"="https://s3.amazonaws.com/prestonneal.com/apps/$archive"
+    }
+    
+    Invoke-WebRequest -Uri "https://prestonneal.com/v1/apps/disabilitydude" `
+        -Method POST `
+        -Body $body
+        
 } catch {
     Write-Host "Upload to S3 failed. Do you have AWS CLI installed and configured?"
 }
 
-$body = @{
-    "version"="0.0.0";
-    "release_date"="$release";
-    "hash"="$hash";
-    "url"="https://s3.amazonaws.com/prestonneal.com/apps/$archive"
-}
-
-Invoke-WebRequest -Uri "https://prestonneal.com/v1/apps/disabilitydude" `
-    -Method POST `
-    -Body $body

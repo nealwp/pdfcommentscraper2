@@ -22,15 +22,3 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
       - run: ./publish.ps1
-
-      - name: Set output
-        id: vars
-        run: echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
-      
-      - name: Upload dist
-        uses: actions/upload-artifact@v3
-        with:
-          name: dist-${{ steps.vars.outputs.short_sha }}.tar.gz
-          path: dist-${{ steps.vars.outputs.short_sha }}.tar.gz
-      - run: ls -l
-

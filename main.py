@@ -586,7 +586,7 @@ class MenuBar(Menu):
         self.summary_form = SummaryForm(self)
 
     def _check_for_updates(self):
-        r = requests.get('https://prestonneal.com/apps/disabilitydude/latest')
+        r = requests.get('https://prestonneal.com/v1/apps/disabilitydude/latest')
         response = r.json()
         url = response['url']
         prompt_response = messagebox.askyesno('Update Available', 'A new update is available. Would you like to install now?')
