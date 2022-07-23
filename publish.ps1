@@ -20,7 +20,7 @@ $ProgressPreference = 'SilentlyContinue'
 Compress-Archive -Path .\dist\main -Destination ".\dist\$archive" -Force
 
 try {
-    aws s3 cp ".\dist\$archive" "s3://prestonneal.com/apps/$archive" --profile me --acl=public-read
+    aws s3 cp ".\dist\$archive" "s3://prestonneal.com/apps/$archive" --acl=public-read
 } catch {
     Write-Host "Upload to S3 failed. Do you have AWS CLI installed and configured?"
 }
