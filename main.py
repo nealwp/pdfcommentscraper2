@@ -1,5 +1,7 @@
+from datetime import datetime
 import random
 import re
+from sqlite3 import Date
 from time import perf_counter
 from csv import writer, DictWriter
 from tkinter import BOTH, END, LEFT, Canvas, LabelFrame, Listbox, Scrollbar, StringVar, Text, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X, messagebox
@@ -554,11 +556,8 @@ class StatusBar(Frame):
         self.status.configure(text='Ready')
     
     def _get_app_version(self):
-        config.read('./config/config.ini')
-        maj = config['Application']['MajorVersion']
-        min = config['Application']['MinorVersion']
-        patch = config['Application']['PatchVersion']
-        self.version.config(text=f"v{maj}.{min}.{patch}")
+        version = get_app_version()
+        self.version.config(text=f"v{version}")
 
 class MenuBar(Menu):
     def __init__(self, parent) -> None:
@@ -587,7 +586,7 @@ class MenuBar(Menu):
         self.summary_form = SummaryForm(self)
 
     def _check_for_updates(self):
-        r = requests.get('http://localhost:3000/apps/disabilitydude/latest-version')
+        r = requests.get('https://prestonneal.com/apps/disabilitydude/latest')
         response = r.json()
         url = response['url']
         prompt_response = messagebox.askyesno('Update Available', 'A new update is available. Would you like to install now?')
@@ -656,6 +655,20 @@ def on_enter(e):
 def on_leave(e):
     e.widget['background'] = 'SystemButtonFace'
 
+def get_app_version():
+    app_path = Path().absolute()
+    config_path = app_path / "config/config.ini"
+    config.read(config_path)
+    version = config['Application']['version']
+    return version
+
+def get_app_release():
+    app_path = Path().absolute()
+    config_path = app_path / "config/config.ini"
+    config.read(config_path)
+    release = datetime.strptime(config['Application']['release'], '%Y-%m-%dT%H:%M:%S')
+    return release
+
 def center(win):
     """
     centers a tkinter window
@@ -673,6 +686,26 @@ def center(win):
     win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
     win.deiconify()
 
+def check_for_updates():
+    r = requests.get('http://localhost:3000/apps/disabilitydude/latest')
+    response = r.json()
+    url = response['url']
+    release = get_app_release()
+    if release < datetime.strptime(response['release_date'], '%Y-%m-%dT%H:%M:%S'):
+        prompt_response = messagebox.askyesno('Update Available', f'A new update is available. Would you like to install now?')
+        if prompt_response == True:
+            app_path = Path().absolute()
+            download_path = '%userprofile%\\AppData\\Local\\Temp\\disabilitydude.zip'
+            extract_path = '%userprofile%\\AppData\\Local\\Temp\\disabilitydude'
+            install_path = '%userprofile%\\AppData\\Local\\disabilitydude'
+            subprocess.Popen(f'{app_path}\install.bat {url} {download_path} {extract_path} {install_path}',
+                creationflags=subprocess.CREATE_NEW_CONSOLE)
+            return True
+    return False
+
 if __name__ == '__main__':
+    updating = check_for_updates()
+    if updating:
+        exit()
     app = App()
     app.mainloop()
