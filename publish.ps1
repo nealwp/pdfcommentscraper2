@@ -13,7 +13,7 @@ pyinstaller `
     --noconfirm --onedir --windowed `
     --distpath ".\dist" `
     --add-data "./config;config/" `
-    --add-data "./install.bat;install.bat" `
+    --add-data "./install.bat;./" `
     "./main.py"
 
 $ProgressPreference = 'SilentlyContinue'
@@ -32,7 +32,7 @@ try {
     Invoke-WebRequest -Uri "https://prestonneal.com/v1/apps/disabilitydude" `
         -Method POST `
         -Body $body
-        
+
 } catch {
     Write-Host "Upload to S3 failed. Do you have AWS CLI installed and configured?"
 }
