@@ -687,7 +687,7 @@ def center(win):
     win.deiconify()
 
 def check_for_updates():
-    r = requests.get('http://localhost:3000/apps/disabilitydude/latest')
+    r = requests.get('https://prestonneal.com/v1/apps/disabilitydude/latest')
     response = r.json()
     url = response['url']
     release = get_app_release()
