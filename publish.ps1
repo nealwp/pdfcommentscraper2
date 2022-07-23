@@ -32,6 +32,6 @@ $body = @{
     "url"="https://s3.amazonaws.com/prestonneal.com/apps/$archive"
 }
 
-Invoke-WebRequest -Uri "http://localhost:3000/apps/disabilitydude" `
+Invoke-WebRequest -Uri "https://prestonneal.com/v1/apps/disabilitydude" `
     -Method POST `
     -Body $body
