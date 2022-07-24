@@ -1,7 +1,7 @@
 set url=%1
 set download_path=%userprofile%\AppData\Local\Temp\disabilitydude.zip
-set extract_path=%userprofile%\AppData\Local\Temp\
-set install_path=%userprofile%\AppData\Local\disabilitydude
+set extract_path=%userprofile%\AppData\Local\Temp
+set install_path=%userprofile%\AppData\Local
 taskkill /f /im disabilitydude.exe
 echo starting download...
 curl %url% --output %download_path%
@@ -16,4 +16,4 @@ echo cleaning up...
 rem rmdir /S /Q "%extract_path%"
 rem del /s /q %download_path%
 REM TODO: need shortcut creation?
-start "" %install_path%\disabilitydude.exe
+start "" %install_path%\disabilitydude\disabilitydude.exe
