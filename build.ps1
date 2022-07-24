@@ -4,7 +4,8 @@ $release = Get-Date -UFormat "%Y-%m-%dT%T"
 $hash = (git rev-parse --short HEAD)
 
 Get-Content ".\config\config.ini" | ForEach-Object {
-    $_ -replace "release = .*","release = $release"
+    $_ -replace "release = .*", "release = $release" `
+        -replace "version = .*", "version = $hash"
 } | Set-Content ".\config\config.tmp"
 
 Remove-Item -Path '.\config\config.ini'
