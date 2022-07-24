@@ -11,6 +11,7 @@ Remove-Item -Path '.\config\config.ini'
 Rename-Item -Path '.\config\config.tmp' -NewName 'config.ini'
 
 pyinstaller `
+    --name 'disabilitydude' `
     --noconfirm --onedir --windowed `
     --distpath ".\dist" `
     --add-data "./config;config/" `
@@ -18,7 +19,7 @@ pyinstaller `
     "./main.py"
 
 $ProgressPreference = 'SilentlyContinue'
-Compress-Archive -Path .\dist\main -Destination ".\dist\$archive" -Force
+Compress-Archive -Path .\dist\disabilitydude -Destination ".\dist\$archive" -Force
 
 try {
     aws s3 cp ".\dist\$archive" "s3://prestonneal.com/apps/$archive" --acl=public-read

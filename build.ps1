@@ -21,6 +21,7 @@ if ($IncludeOCR) {
     "./main.py"
 } else {
     pyinstaller `
+    --name 'disabilitydude' `
     --noconfirm --onedir --windowed `
     --distpath ".\dist" `
     --add-data "./config;config/" `
