@@ -3,7 +3,8 @@ $hash = (git rev-parse --short HEAD)
 $archive = "disabilitydude-$hash.zip"
 
 Get-Content ".\config\config.ini" | ForEach-Object {
-    $_ -replace "release = .*","release = $release"
+    $_. -replace "release = .*", "release = $release" `
+        -replace "version = .*", "version = $hash"
 } | Set-Content ".\config\config.tmp"
 
 Remove-Item -Path '.\config\config.ini'

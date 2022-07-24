@@ -587,9 +587,11 @@ class MenuBar(Menu):
 
     def _check_for_updates(self):
         updating = check_for_updates()
-        if updating:
-            self.parent.destroy()
-
+        if not updating:
+            messagebox.showinfo('Updates', 'You\'re up-to-date!')
+            return
+        self.parent.destroy()
+        
     def _open_keywords_menu(self):
         self.keyword_settings_form = KeywordSettingsForm(self)
 
@@ -685,10 +687,7 @@ def check_for_updates():
         prompt_response = messagebox.askyesno('Update Available', f'A new update is available. Would you like to install now?')
         if prompt_response == True:
             app_path = Path().absolute()
-            download_path = '%userprofile%\\AppData\\Local\\Temp\\disabilitydude.zip'
-            extract_path = '%userprofile%\\AppData\\Local\\Temp\\disabilitydude'
-            install_path = '%userprofile%\\AppData\\Local\\disabilitydude'
-            subprocess.Popen(f'{app_path}\install.bat {url} {download_path} {extract_path} {install_path}',
+            subprocess.Popen(f'{app_path}\install.bat {url}',
                 creationflags=subprocess.CREATE_NEW_CONSOLE)
             return True
     return False
