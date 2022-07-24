@@ -586,18 +586,8 @@ class MenuBar(Menu):
         self.summary_form = SummaryForm(self)
 
     def _check_for_updates(self):
-        r = requests.get('https://prestonneal.com/v1/apps/disabilitydude/latest')
-        response = r.json()
-        url = response['url']
-        prompt_response = messagebox.askyesno('Update Available', 'A new update is available. Would you like to install now?')
-        if prompt_response == True:
-            messagebox.showinfo('Path', Path().absolute())
-            app_path = Path().absolute()
-            download_path = '%userprofile%\\AppData\\Local\\Temp\\disabilitydude.zip'
-            extract_path = '%userprofile%\\AppData\\Local\\Temp\\disabilitydude'
-            install_path = '%userprofile%\\AppData\\Local\\disabilitydude'
-            subprocess.Popen(f'{app_path}\install.bat {url} {download_path} {extract_path} {install_path}',
-                creationflags=subprocess.CREATE_NEW_CONSOLE)
+        updating = check_for_updates()
+        if updating:
             self.parent.destroy()
 
     def _open_keywords_menu(self):
