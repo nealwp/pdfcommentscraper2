@@ -14,5 +14,4 @@ echo cleaning up...
 rmdir /S /Q "%extract_path%"
 del /s /q %download_path%
 REM TODO: need shortcut creation?
-start "" "%install_path%\main\main.exe"
-pause
+start "" %install_path%\main\main.exe

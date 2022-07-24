@@ -695,6 +695,6 @@ def check_for_updates():
 if __name__ == '__main__':
     updating = check_for_updates()
     if updating:
-        exit()
+        quit()
     app = App()
     app.mainloop()
