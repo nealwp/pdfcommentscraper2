@@ -629,7 +629,13 @@ class MenuBar(Menu):
         # run_commentscraper()
         pdf_path = get_file_path()
         comments = scan_for_comments(pdf_path)
-        print(comments)
+        if len(comments) > 0:
+            output_path = get_save_path('csv')
+            with open(output_path,'w',encoding='utf-8', newline='') as f:
+                fieldnames = ['page', 'date', 'text', 'provider', 'pagehead', 'ref']
+                csvdw = DictWriter(f, fieldnames=fieldnames)
+                csvdw.writeheader()
+                csvdw.writerows(comments)
 
     def set_app_status(self, message):
         self.parent.set_status(message)
@@ -693,8 +699,5 @@ def check_for_updates():
     return False
 
 if __name__ == '__main__':
-    updating = check_for_updates()
-    if updating:
-        quit()
     app = App()
     app.mainloop()

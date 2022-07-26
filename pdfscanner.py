@@ -16,7 +16,10 @@ from datetime import datetime
 
 def parse_comment(comment):
     comment = comment.split(";")
-    date = datetime.strptime(comment[0], '%m/%d/%Y')
+    try:
+        date = datetime.strptime(comment[0], '%m/%d/%Y')
+    except ValueError as e:
+        date = datetime.strptime(comment[0], '%m/%d/%y')
     text = comment[1].replace("\r", " ")
     provider = comment[2]
     data = {
