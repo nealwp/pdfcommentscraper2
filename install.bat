@@ -1,19 +1,19 @@
-set url=%1
-set download_path=%userprofile%\AppData\Local\Temp\disabilitydude.zip
-set extract_path=%userprofile%\AppData\Local\Temp
-set install_path=%userprofile%\AppData\Local
-taskkill /f /im disabilitydude.exe
-echo starting download...
-curl %url% --output %download_path%
-echo extracting...
-powershell -Command "Expand-Archive -Path '%download_path%' -DestinationPath '%extract_path%'"
-REM echo removing current installation...Y
-rmdir /s /q %install_path%\disabilitydude 
-mkdir %install_path%\disabilitydude
-xcopy /e /i /q %extract_path%\disabilitydude %install_path%\disabilitydude
-echo installing new version...
-REM echo cleaning up...
-rmdir /s /q %extract_path%\disabilitydude
-del /s /q %download_path%
-REM TODO: need shortcut creation?
-start "" %install_path%\disabilitydude\disabilitydude.exe
+REM set url=%1
+REM set download_path=%userprofile%\AppData\Local\Temp\disabilitydude.zip
+REM set extract_path=%userprofile%\AppData\Local\Temp
+REM set install_path=%userprofile%\AppData\Local
+REM taskkill /f /im disabilitydude.exe
+REM echo starting download...
+REM curl %url% --output %download_path%
+REM echo extracting...
+REM powershell -Command "Expand-Archive -Path '%download_path%' -DestinationPath '%extract_path%'"
+REM REM echo removing current installation...Y
+REM rmdir /s /q %install_path%\disabilitydude 
+REM mkdir %install_path%\disabilitydude
+REM xcopy /e /i /q %extract_path%\disabilitydude %install_path%\disabilitydude
+REM echo installing new version...
+REM REM echo cleaning up...
+REM rmdir /s /q %extract_path%\disabilitydude
+REM del /s /q %download_path%
+REM REM TODO: need shortcut creation?
+REM start "" %install_path%\disabilitydude\disabilitydude.exe
