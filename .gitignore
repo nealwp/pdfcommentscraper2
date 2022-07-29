@@ -12,3 +12,4 @@ build
 lib/*
 *.json
 files
+*.drawio*

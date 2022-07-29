@@ -13,6 +13,55 @@ from pdfminer.pdftypes import PDFObjRef
 from pdfminer.high_level import extract_text_to_fp
 
 from datetime import datetime
+from dataclasses import dataclass
+from typing import List
+
+@dataclass
+class Claimant:
+    '''individual the medical record pertains to'''
+    name: str
+    ssn: str
+    birthdate: datetime
+    education_years: int
+    onset_date: datetime
+    pdof: datetime  # what is this??
+    claim: str  # this should be like T16 or something
+    last_insured_date: datetime
+    work_history: list  # TODO: need own class
+    dds_rfc: dict   #TODO: need own class
+    claimed_mdsi: list  #TODO: need own class
+
+    def age_at_onset(self) -> int:
+        if self.birthdate and self.onset_date:
+            birthdate = datetime.strptime(birthdate, '%m/%d/%Y')
+            onset_date = datetime.strptime(onset_date, '%m/%d/%Y')
+            return onset_date.year - birthdate.year - ((onset_date.month, onset_date.day) < (birthdate.month, birthdate.day))
+        else: 
+            return None
+
+@dataclass
+class Exhibit:
+    '''a section of the medical record'''
+    id: str
+    provider: str
+    from_date: datetime
+    to_date: datetime
+
+@dataclass
+class Comment:
+    '''annotations made to the medical record by the reviewer'''
+    date: datetime
+    text: str
+    page: int
+    exhibit: Exhibit
+    exhibit_ref: int
+
+@dataclass
+class MedicalRecord:
+    '''a social security pdf medical record'''
+    claimant: Claimant
+    exhibits: List[Exhibit]
+    comments: List[Comment]
 
 def parse_comment(comment):
     comment = comment.split(";")
@@ -108,7 +157,7 @@ def scan_for_comments(pdf_path):
                         }
                         comments.append(data)
     
-    comments = sorted(comments, key=lambda el: el['date'])
+    comments = sorted(comments, key=lambda el: el['ref'])
     return comments                      
 
 
