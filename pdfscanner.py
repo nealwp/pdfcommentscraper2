@@ -1,3 +1,4 @@
+from pydoc import pager
 import sys
 import re
 from io import StringIO
@@ -42,25 +43,29 @@ class Claimant:
 @dataclass
 class Exhibit:
     '''a section of the medical record'''
-    id: str
-    provider: str
+    provider_name: str
     from_date: datetime
     to_date: datetime
 
 @dataclass
+class PageDetail:
+    '''detail for a page'''
+    exhibit_id: str
+    exhibit_page: int
+
+@dataclass
 class Comment:
     '''annotations made to the medical record by the reviewer'''
-    date: datetime
-    text: str
-    page: int
-    exhibit: Exhibit
-    exhibit_ref: int
+    date: datetime = ''
+    text: str = ''
+    page: int = -1
 
 @dataclass
 class MedicalRecord:
     '''a social security pdf medical record'''
     claimant: Claimant
-    exhibits: List[Exhibit]
+    exhibits: dict
+    pages: dict
     comments: List[Comment]
 
 def parse_comment(comment):
@@ -78,24 +83,54 @@ def parse_comment(comment):
     }
     return data
 
-def parse_exhibit_data(doc):
+def get_exhibits_from_pdf(doc):
     try:
         outlines = doc.get_outlines()
         index = 1
         provider = ''
-        exhibit_data = {index: {'provider': '','ref': ''}}
+        exhibits = {}
         for (level, title, dest, a, se) in outlines:
-            if level == 2:
+            if level == 2:              
+                provider = title
+                id = provider.split(":")[0]
+                provider_name = provider.split(":")[1].replace("Doc. Dt.","").replace("Tmt. Dt.", "").strip()
+                provider_dates = re.sub(r"\(\d* page.*", "", provider.split(":")[2]).strip()
+                from_date = datetime.strptime(provider_dates.split("-")[0], "%m/%d/%Y")
+                try:
+                    to_date = datetime.strptime(provider_dates.split("-")[1], "%m/%d/%Y")
+                except IndexError as e:
+                    to_date = from_date
+                
+                ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date)
+                exhibits[id] = ex
+            if level == 3:
+                index += 1
+    except PDFNoOutlines as e:
+        exhibits = {}
+        print('PDF has no outlines to reference.')
+
+    return exhibits
+
+def get_page_details_from_pdf(doc):
+    try:
+        outlines = doc.get_outlines()
+        index = 1
+        provider = ''
+        pages = {}
+        for (level, title, dest, a, se) in outlines:
+            if level == 2:              
                 provider = title
             if level == 3:
                 index += 1
-                ref = f'{provider.split(":")[0]}-{title.split()[1]}'
-                exhibit_data[index] = {'provider': provider,'ref': ref}
+                exhibit_id = provider.split(":")[0]
+                exhibit_page = int(title.split()[1])
+                pg = PageDetail(exhibit_id=exhibit_id,exhibit_page=exhibit_page)           
+                pages[index] = pg
     except PDFNoOutlines as e:
-        exhibit_data = {}
+        pages = {}
         print('PDF has no outlines to reference.')
 
-    return exhibit_data
+    return pages
 
 def parse_client_info(page_text):
 
@@ -314,9 +349,10 @@ def scan_for_keywords(pdf_path, app):
 
 def scan_pdf_for_summary(pdf_path):
 
-    start = perf_counter()  
+    start = perf_counter()
+
+    mr = MedicalRecord(claimant=None, exhibits={}, pages={}, comments=[])  
     summary_data = {}
-    comments = []
     work_history = []
 
     with open(pdf_path, 'rb') as in_file: 
@@ -327,7 +363,9 @@ def scan_pdf_for_summary(pdf_path):
         device = TextConverter(rsrcmgr, output_string, laparams=LAParams())
         interpreter = PDFPageInterpreter(rsrcmgr, device)
 
-        exhibit_data = parse_exhibit_data(doc)
+        mr.exhibits = get_exhibits_from_pdf(doc)
+        mr.pages = get_page_details_from_pdf(doc)
+        return        
         checkpoint = perf_counter()
         print(f'exhibit data done in {checkpoint - start:0.2f}s')
         
@@ -347,32 +385,27 @@ def scan_pdf_for_summary(pdf_path):
                     break
             if len(work_history) == 0:
                 work_history = parse_work_history(page_text)
-            parse_ability_ratings(page_text)
+            #parse_ability_ratings(page_text)
         
         for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
             if page.annots:
                 page_comments = parse_page_comments(page.annots)
                 if len(page_comments) > 0:
                     for comment in page_comments:
-                        data = {
-                            'page': pagenumber,
-                            'date': comment['date'], 
-                            'text': comment['text'],
-                            'provider': comment['provider'],
-                            'pagehead': exhibit_data[pagenumber]['provider'],
-                            'ref': exhibit_data[pagenumber]['ref']
-                        }
-                        comments.append(data)
+                        cm = Comment()
+                        cm.date = comment['date']
+                        cm.text = comment['text']
+                        cm.page = pagenumber
+                        mr.comments.append(cm)
         checkpoint = perf_counter()
         print(f'comment scan done in {checkpoint - start:0.2f}s')
 
-        comments = sorted(comments, key=lambda el: el['date'])
         checkpoint = perf_counter()
         print(f'sort done in {checkpoint - start:0.2f}s')
 
         summary_data['client'] = client_info
-        summary_data['comments'] = comments
-        summary_data['exhibits'] = exhibit_data
+        summary_data['comments'] = mr.comments
+        summary_data['exhibits'] = mr.exhibits
         summary_data['work_history'] = work_history
 
     finish = perf_counter()
@@ -380,6 +413,8 @@ def scan_pdf_for_summary(pdf_path):
     return summary_data
 
 def main():
+    test_path = r'.\\files\\2990852-andrew_carey-case_file_exhibited_bookmarked-7-19-2022-1658258547.pdf'
+    scan_pdf_for_summary(test_path)
     return
 
 if __name__ == '__main__':

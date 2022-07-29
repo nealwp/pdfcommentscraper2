@@ -222,8 +222,6 @@ class SummaryForm(Toplevel):
         self._fill_entry_fields()
         self.update()
         
-        
-
     def _fill_entry_fields(self):
         client = self.summary_data['client']
         self.pdf_comments = self.summary_data['comments']

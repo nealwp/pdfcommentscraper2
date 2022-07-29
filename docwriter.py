@@ -129,11 +129,13 @@ def generate_tablular_medical_summary(data):
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     para.style = doc.styles['Normal 2']
 
-    for comment in data['comments']:
-        p = doc.add_paragraph()
-        p.add_run(f'{datetime.strftime(comment["date"], "%m/%d/%Y")}: ').bold = True
-        p.add_run(f'{comment["text"]}')
-        p.add_run(f' ({str(comment["ref"]).replace("-","/")})')
+    
+    
+    #for comment in data['comments']:
+    #    p = doc.add_paragraph()
+    #    p.add_run(f'{datetime.strftime(comment.date, "%m/%d/%Y")}: ').bold = True
+    #    p.add_run(f'{comment.text}')
+    #    p.add_run(f' ({str(comment["ref"]).replace("-","/")})')
 
     for section in doc.sections:
         section.left_margin = Inches(1)
