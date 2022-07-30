@@ -13,29 +13,38 @@ from pdfminer.pdfparser import PDFParser
 from pdfminer.pdftypes import PDFObjRef
 from pdfminer.high_level import extract_text_to_fp
 
-from datetime import datetime
+from datetime import date, datetime
 from dataclasses import dataclass
 from typing import List
 
 @dataclass
 class Claimant:
     '''individual the medical record pertains to'''
-    name: str
-    ssn: str
-    birthdate: datetime
-    education_years: int
-    onset_date: datetime
-    pdof: datetime  # what is this??
-    claim: str  # this should be like T16 or something
-    last_insured_date: datetime
-    work_history: list  # TODO: need own class
-    dds_rfc: dict   #TODO: need own class
-    claimed_mdsi: list  #TODO: need own class
+    name: str = None
+    ssn: str = None
+    birthdate: datetime = None
+    education_years: int = None
+    onset_date: datetime = None
+    pdof: datetime = None
+    claim: str = None
+    last_insured_date: datetime = None
+    work_history: list = None # TODO: need own class
+    dds_rfc: dict = None #TODO: need own class
+    claimed_mdsi: list = None #TODO: need own class
+
+    def age(self) -> int:
+        if self.birthdate:
+            today = date.today()
+            birthdate = datetime.strptime(self.birthdate, '%m/%d/%Y')
+            age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+            return age
+        else:
+            return None
 
     def age_at_onset(self) -> int:
         if self.birthdate and self.onset_date:
-            birthdate = datetime.strptime(birthdate, '%m/%d/%Y')
-            onset_date = datetime.strptime(onset_date, '%m/%d/%Y')
+            birthdate = datetime.strptime(self.birthdate, '%m/%d/%Y')
+            onset_date = datetime.strptime(self.onset_date, '%m/%d/%Y')
             return onset_date.year - birthdate.year - ((onset_date.month, onset_date.day) < (birthdate.month, birthdate.day))
         else: 
             return None
@@ -44,8 +53,9 @@ class Claimant:
 class Exhibit:
     '''a section of the medical record'''
     provider_name: str
-    from_date: datetime
-    to_date: datetime
+    from_date: str
+    to_date: str
+    comments: list
 
 @dataclass
 class PageDetail:
@@ -56,9 +66,10 @@ class PageDetail:
 @dataclass
 class Comment:
     '''annotations made to the medical record by the reviewer'''
-    date: datetime = ''
-    text: str = ''
-    page: int = -1
+    date: datetime
+    text: str
+    page: int
+    exhibit_page: int
 
 @dataclass
 class MedicalRecord:
@@ -66,14 +77,16 @@ class MedicalRecord:
     claimant: Claimant
     exhibits: dict
     pages: dict
-    comments: List[Comment]
+
+    def comment_count(self):
+        count = 0
+        for exhibit in self.exhibits.keys():
+            count += len(self.exhibits[exhibit].comments)
+        return count
 
 def parse_comment(comment):
     comment = comment.split(";")
-    try:
-        date = datetime.strptime(comment[0], '%m/%d/%Y')
-    except ValueError as e:
-        date = datetime.strptime(comment[0], '%m/%d/%y')
+    date = comment[0]
     text = comment[1].replace("\r", " ")
     provider = comment[2]
     data = {
@@ -95,13 +108,13 @@ def get_exhibits_from_pdf(doc):
                 id = provider.split(":")[0]
                 provider_name = provider.split(":")[1].replace("Doc. Dt.","").replace("Tmt. Dt.", "").strip()
                 provider_dates = re.sub(r"\(\d* page.*", "", provider.split(":")[2]).strip()
-                from_date = datetime.strptime(provider_dates.split("-")[0], "%m/%d/%Y")
+                from_date = provider_dates.split("-")[0]
                 try:
-                    to_date = datetime.strptime(provider_dates.split("-")[1], "%m/%d/%Y")
+                    to_date = provider_dates.split("-")[1]
                 except IndexError as e:
                     to_date = from_date
                 
-                ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date)
+                ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
                 exhibits[id] = ex
             if level == 3:
                 index += 1
@@ -134,7 +147,6 @@ def get_page_details_from_pdf(doc):
 
 def parse_client_info(page_text):
 
-    start = perf_counter()    
     lines = page_text.splitlines()
     lines = [line for line in lines if line]
     client_data = lines[:7]
@@ -142,9 +154,6 @@ def parse_client_info(page_text):
     for e in client_data:
         e = e.split(':')
         client_info[e[0]] = e[1].lstrip()
-    finish = perf_counter()
-    
-    print(f'client info done in {finish - start:0.2f}s')
     return client_info
 
 def scan_for_comments(pdf_path):
@@ -195,7 +204,6 @@ def scan_for_comments(pdf_path):
     comments = sorted(comments, key=lambda el: el['ref'])
     return comments                      
 
-
 def parse_page_comments(annots):
 
     page_comments = []
@@ -236,7 +244,6 @@ def parse_work_history(page_text):
                     'intensity': '',
                     'skill_level': '' 
                     }
-            print(work_history)
     return work_history
 
 def parse_ability_ratings(page_text):
@@ -351,9 +358,7 @@ def scan_pdf_for_summary(pdf_path):
 
     start = perf_counter()
 
-    mr = MedicalRecord(claimant=None, exhibits={}, pages={}, comments=[])  
-    summary_data = {}
-    work_history = []
+    mr = MedicalRecord(claimant=None, exhibits={}, pages={})  
 
     with open(pdf_path, 'rb') as in_file: 
         parser = PDFParser(in_file)
@@ -364,57 +369,51 @@ def scan_pdf_for_summary(pdf_path):
         interpreter = PDFPageInterpreter(rsrcmgr, device)
 
         mr.exhibits = get_exhibits_from_pdf(doc)
-        mr.pages = get_page_details_from_pdf(doc)
-        return        
-        checkpoint = perf_counter()
-        print(f'exhibit data done in {checkpoint - start:0.2f}s')
-        
+        mr.pages = get_page_details_from_pdf(doc)             
+        mr.claimant = Claimant(work_history=[])
+
         for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
             interpreter.process_page(page)            
             page_text = output_string.getvalue() 
             if pagenumber == 1:
                 client_info = parse_client_info(page_text)
-                checkpoint = perf_counter()
-                print(f'client data done in {checkpoint - start:0.2f}s')
-                client_info['Date of Birth'] = None
-            if not client_info['Date of Birth']:
-                client_info['Date of Birth'] = parse_client_date_of_birth(page_text)
-                if client_info['Date of Birth']:
-                    checkpoint = perf_counter()
-                    print(f'dob done in {checkpoint - start:0.2f}s')
+                mr.claimant.name = client_info['Claimant']
+                mr.claimant.ssn = client_info['SSN']
+                mr.claimant.onset_date = client_info['Alleged Onset']
+                mr.claimant.claim = client_info['Claim Type']
+                mr.claimant.pdof = datetime.strptime(client_info['Application'], '%m/%d/%Y')
+                mr.claimant.last_insured_date = client_info['Last Insured']
+                mr.claimant.birthdate = None
+            if not mr.claimant.birthdate:
+                mr.claimant.birthdate = parse_client_date_of_birth(page_text)
+                if mr.claimant.birthdate:
                     break
-            if len(work_history) == 0:
-                work_history = parse_work_history(page_text)
+
+            if len(mr.claimant.work_history) == 0:
+                mr.claimant.work_history = parse_work_history(page_text)
             #parse_ability_ratings(page_text)
         
         for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
             if page.annots:
                 page_comments = parse_page_comments(page.annots)
                 if len(page_comments) > 0:
+                    exhibit_id = mr.pages[pagenumber].exhibit_id
+                    exhibit_page = mr.pages[pagenumber].exhibit_page
                     for comment in page_comments:
-                        cm = Comment()
-                        cm.date = comment['date']
-                        cm.text = comment['text']
-                        cm.page = pagenumber
-                        mr.comments.append(cm)
+                        date = comment['date']
+                        text = comment['text']
+                        cm = Comment(date=date, text=text, page=pagenumber, exhibit_page=exhibit_page)
+                        mr.exhibits[exhibit_id].comments.append(cm)
         checkpoint = perf_counter()
-        print(f'comment scan done in {checkpoint - start:0.2f}s')
-
-        checkpoint = perf_counter()
-        print(f'sort done in {checkpoint - start:0.2f}s')
-
-        summary_data['client'] = client_info
-        summary_data['comments'] = mr.comments
-        summary_data['exhibits'] = mr.exhibits
-        summary_data['work_history'] = work_history
-
+        print(f'comment scan done in {checkpoint - start:0.2f}s')   
     finish = perf_counter()
     print(f'summary scan complete in {finish - start:0.2f}s')
-    return summary_data
+    return mr
 
 def main():
     test_path = r'.\\files\\2990852-andrew_carey-case_file_exhibited_bookmarked-7-19-2022-1658258547.pdf'
-    scan_pdf_for_summary(test_path)
+    med_rec = scan_pdf_for_summary(test_path)
+    print(med_rec.exhibits)
     return
 
 if __name__ == '__main__':

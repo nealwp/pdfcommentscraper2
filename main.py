@@ -8,7 +8,7 @@ from tkinter import BOTH, END, LEFT, Canvas, LabelFrame, Listbox, Scrollbar, Str
 from tkinter.ttk import Combobox
 from tkcalendar import Calendar, DateEntry
 from commentscraper import scrape_comments
-from pdfscanner import scan_for_keywords, scan_for_comments, scan_pdf_for_summary
+from pdfscanner import scan_for_keywords, scan_for_comments, scan_pdf_for_summary, MedicalRecord
 from docwriter import generate_chronological_medical_summary, generate_tablular_medical_summary
 from pathlib import Path
 import subprocess
@@ -60,6 +60,7 @@ class SummaryForm(Toplevel):
         self.parent = parent
         self.work_history = []
         self.pdf_comments = []
+        self.medical_record = None
         self.pdf_path = ""
         self.attributes('-alpha', 0.0)
         self.title('New Summary')
@@ -218,24 +219,23 @@ class SummaryForm(Toplevel):
         if not self.pdf_path:
             self.pdf_path = get_file_path()
         self.deiconify()
-        self.summary_data = scan_pdf_for_summary(self.pdf_path)
+        self.medical_record = scan_pdf_for_summary(self.pdf_path)
         self._fill_entry_fields()
         self.update()
         
     def _fill_entry_fields(self):
-        client = self.summary_data['client']
-        self.pdf_comments = self.summary_data['comments']
-        self.work_history = self.summary_data['work_history']
+        mr = self.medical_record
+        self.work_history = mr.claimant.work_history
 
-        self.name_entry.insert(0, client['Claimant'])
-        self.ssn_entry.insert(0, client['SSN'])
-        self.onset_date_entry.insert(0, client['Alleged Onset'])
-        self.title_entry.insert(0, client['Claim Type'])
-        self.application_date_entry.insert(0, client['Application'])
-        self.birthday_entry.insert(0, client['Date of Birth'])
-        self.insured_date_entry.insert(0, client['Last Insured'])
+        self.name_entry.insert(0, mr.claimant.name)
+        self.ssn_entry.insert(0, mr.claimant.ssn)
+        self.onset_date_entry.insert(0, mr.claimant.onset_date)
+        self.title_entry.insert(0, mr.claimant.claim)
+        self.application_date_entry.insert(0, datetime.strftime(mr.claimant.pdof, '%m/%d/%Y'))
+        self.birthday_entry.insert(0, mr.claimant.birthdate)
+        self.insured_date_entry.insert(0, mr.claimant.last_insured_date)
 
-        comment_count = len(self.pdf_comments)
+        comment_count = mr.comment_count()
         self.comment_count_label.configure(text=f'Comments Found: {comment_count}')
         self._paint_work_history()
 
@@ -257,15 +257,20 @@ class SummaryForm(Toplevel):
         drug_use = self.drugs_txtVar.get()
         criminal_history = self.criminal_txtVar.get()
         overview = self.overview_text.get('1.0', 'end-1c')
-        comments = self.pdf_comments
+        exhibits = self.medical_record.exhibits
+        pages = self.medical_record.pages
 
-        if birthdate:
+        claimant = self.medical_record.claimant
+
+        if self.medical_record:
+            age = self.medical_record.claimant.age()
+        else: 
             age = get_age(birthdate)
-        else: age = ''
 
-        if birthdate and onset_date:
+        if self.medical_record:
+            age_at_onset = self.medical_record.claimant.age_at_onset()
+        else:
             age_at_onset = get_age_at_onset(birthdate, onset_date)
-        else: age_at_onset =''
 
         data = {
             'client_name': client_name,
@@ -283,7 +288,9 @@ class SummaryForm(Toplevel):
             'drug_use': drug_use,
             'criminal_history': criminal_history,
             'overview': overview,
-            'comments': comments
+            'claimant': claimant,
+            'exhibits': exhibits,
+            'pages': pages
         }
 
         doc = generate_tablular_medical_summary(data)
