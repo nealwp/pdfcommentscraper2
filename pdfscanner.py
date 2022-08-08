@@ -88,7 +88,10 @@ def parse_comment(comment):
     comment = comment.split(";")
     date = comment[0]
     text = comment[1].replace("\r", " ")
-    provider = comment[2]
+    try:
+        provider = comment[2]
+    except IndexError:
+        provider = ""
     data = {
         'date': date,
         'text': text,
