@@ -17,6 +17,41 @@ from datetime import date, datetime
 from dataclasses import dataclass
 from typing import List
 
+class MedicalRecord2:
+    
+    def __init__(self, file_path):
+        self.exhibits = {}
+        with open(file_path, 'rb') as in_file: 
+            self.parser = PDFParser(in_file)
+            self.doc = PDFDocument(self.parser)
+            self.rsrcmgr = PDFResourceManager()
+            self.output_string = StringIO()
+            self.device = TextConverter(self.rsrcmgr, self.output_string, laparams=LAParams())
+            self.interpreter = PDFPageInterpreter(self.rsrcmgr, self.device)
+            self.set_exhibits()
+
+    def set_exhibits(self):
+        self.outlines = self.doc.get_outlines()
+        index = 1
+        provider = ''
+        sys.setrecursionlimit(2000)
+        for (level, title, dest, a, se) in self.outlines:
+            if level == 2:              
+                provider = title
+                id = provider.split(":")[0]
+                provider_name = provider.split(":")[1].replace("Doc. Dt.","").replace("Tmt. Dt.", "").strip()
+                provider_dates = re.sub(r"\(\d* page.*", "", provider.split(":")[2]).strip()
+                from_date = provider_dates.split("-")[0]
+                try:
+                    to_date = provider_dates.split("-")[1]
+                except IndexError as e:
+                    to_date = from_date
+                
+                ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
+                self.exhibits[id] = ex
+            if level == 3:
+                index += 1
+
 @dataclass
 class Claimant:
     '''individual the medical record pertains to'''
@@ -102,6 +137,7 @@ def parse_comment(comment):
 def get_exhibits_from_pdf(doc):
     try:
         outlines = doc.get_outlines()
+        sys.setrecursionlimit(999999999)
         index = 1
         provider = ''
         exhibits = {}
@@ -121,10 +157,13 @@ def get_exhibits_from_pdf(doc):
                 exhibits[id] = ex
             if level == 3:
                 index += 1
+            
     except PDFNoOutlines as e:
         exhibits = {}
+        sys.setrecursionlimit(1000)
         print('PDF has no outlines to reference.')
 
+    sys.setrecursionlimit(1000)
     return exhibits
 
 def get_page_details_from_pdf(doc):
@@ -133,6 +172,7 @@ def get_page_details_from_pdf(doc):
         index = 1
         provider = ''
         pages = {}
+        sys.setrecursionlimit(2000)
         for (level, title, dest, a, se) in outlines:
             if level == 2:              
                 provider = title
@@ -143,9 +183,11 @@ def get_page_details_from_pdf(doc):
                 pg = PageDetail(exhibit_id=exhibit_id,exhibit_page=exhibit_page)           
                 pages[index] = pg
     except PDFNoOutlines as e:
+        sys.setrecursionlimit(1000)
         pages = {}
         print('PDF has no outlines to reference.')
 
+    sys.setrecursionlimit(1000)
     return pages
 
 def parse_client_info(page_text):
@@ -413,11 +455,11 @@ def scan_pdf_for_summary(pdf_path):
     print(f'summary scan complete in {finish - start:0.2f}s')
     return mr
 
+
+
 def main():
-    test_path = r'.\\files\\2990852-andrew_carey-case_file_exhibited_bookmarked-7-19-2022-1658258547.pdf'
-    med_rec = scan_pdf_for_summary(test_path)
-    print(med_rec.exhibits)
-    return
+    file_path = r'.\\files\\2909274-cecilia_phillips-case_file_exhibited_bookmarked-8-10-2022- w notes.pdf'
+    scan_pdf_for_summary(file_path)
 
 if __name__ == '__main__':
     main()
