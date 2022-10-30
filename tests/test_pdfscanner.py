@@ -1,4 +1,4 @@
-from pdfscanner import *
+from modules.pdfscanner import *
 
 file_path = r'.\\files\\2909274-cecilia_phillips-case_file_exhibited_bookmarked-8-10-2022- w notes.pdf'
 

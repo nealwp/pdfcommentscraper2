@@ -7,9 +7,9 @@ from csv import writer, DictWriter
 from tkinter import BOTH, END, LEFT, Canvas, LabelFrame, Listbox, Scrollbar, StringVar, Text, Tk, Button, Label, Entry, Toplevel, Menu, Frame, SUNKEN, N, S, E, W, BOTTOM, X, messagebox
 from tkinter.ttk import Combobox
 from tkcalendar import Calendar, DateEntry
-from commentscraper import scrape_comments
-from pdfscanner import scan_for_keywords, scan_for_comments, scan_pdf_for_summary, MedicalRecord
-from docwriter import generate_chronological_medical_summary, generate_tablular_medical_summary
+from modules.commentscraper import scrape_comments
+from modules.pdfscanner import scan_for_keywords, scan_for_comments, scan_pdf_for_summary, MedicalRecord
+from modules.docwriter import generate_chronological_medical_summary, generate_tablular_medical_summary
 from pathlib import Path
 import subprocess
 import requests
