@@ -17,6 +17,45 @@ from datetime import date, datetime
 from dataclasses import dataclass
 from typing import List
 
+@dataclass
+class Page:
+    number: int
+    text: str
+    comments: list
+
+class PDFData:
+
+    def __init__(self, file_path):
+        with open(file_path, 'rb') as in_file: 
+            self.parser = PDFParser(in_file)
+            self.doc = PDFDocument(self.parser)
+            self.rsrcmgr = PDFResourceManager()
+            self.output_string = StringIO()
+            self.device = TextConverter(self.rsrcmgr, self.output_string, laparams=LAParams())
+            self.interpreter = PDFPageInterpreter(self.rsrcmgr, self.device)
+            self.outlines = self.doc.get_outlines()
+            self.pages = self.get_pages()
+            # for page in pages: parse comment
+            
+    def get_pages(self):
+        pages = []
+        for page_number, page in enumerate(PDFPage.create_pages(self.doc), start=1):
+            self.interpreter.process_page(page)            
+            page_text = self.output_string.getvalue()
+            if page.annots:
+                page_comments = self.parse_page_comments(page.annots)
+            page = Page(number=page_number, text=page_text, comments=page_comments)
+            pages.append(page)
+
+    def parse_page_comments(self, annots):
+        page_comments = []
+        for annot in annots:
+            por = PDFObjRef.resolve(annot)
+            if 'Contents' in por.keys():
+                text = por['Contents'].decode('utf-8', 'ignore')
+                page_comments.append(text)
+        return page_comments
+
 class MedicalRecord2:
     
     def __init__(self, file_path):
