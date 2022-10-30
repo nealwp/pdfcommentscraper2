@@ -3,7 +3,7 @@ import docx
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_UNDERLINE
 from docx.enum.style import WD_STYLE_TYPE
-import datetime
+from datetime import datetime
 
 from pdfscanner import Exhibit
 
@@ -95,7 +95,7 @@ def generate_tablular_medical_summary(data):
     doc.add_paragraph(f'DOB:\t\t{data["birthdate"]}\t\tAge:\t{data["age"]}\tAge at AOD:\t{data["age_at_onset"]}')
     doc.add_paragraph(f'EDU:\t\t{data["education"]}')
     doc.add_paragraph(f'AOD:\t\t{data["onset_date"]}')
-    doc.add_paragraph(f'PDOF:\t\t{data["claimant"].pdof}')
+    doc.add_paragraph(f'PDOF:\t\t{datetime.strftime(data["claimant"].pdof, "%m/%d/%Y")}')
     doc.add_paragraph(f'Claim:\t\t{data["claimant"].claim}')
     doc.add_paragraph(f'DLI:\t\t{data["insured_date"]}\n\n')
     
