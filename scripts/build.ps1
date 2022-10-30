@@ -25,7 +25,6 @@ if ($IncludeOCR) {
     --noconfirm --onedir --windowed `
     --distpath ".\dist" `
     --add-data "./config;config/" `
-    --add-data "./install.bat;./" `
     "./main.py"
 }
 
