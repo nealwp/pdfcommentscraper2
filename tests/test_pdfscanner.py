@@ -18,8 +18,11 @@ def test_PDFData_dataclass():
 def test_PDFReader():
     pdf_reader = PDFReader(file_path)
     pdf_data = pdf_reader.read()
-    print(pdf_data.outlines)
     assert(len(pdf_data.outlines)) > 0
     assert(pdf_data.pages[0].text) == 'Hello world'
-    assert(pdf_data.pages[0].comments[0]) == 'hello from comment' 
+    assert(pdf_data.pages[0].comments[0]) == 'hello from comment'
+    assert(pdf_data.pages[0].comments[1]) == 'hello from comment 2' 
+    assert(pdf_data.pages[1].text) == 'this is page 2'
+    assert(pdf_data.pages[1].comments[0]) == 'page 2 comment'
+    
 

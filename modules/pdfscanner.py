@@ -10,12 +10,11 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdftypes import PDFObjRef
-from pdfminer.high_level import extract_text_to_fp
 from pdfminer import pdftypes
 
 from datetime import date, datetime
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any
 
 @dataclass
 class Page:
@@ -43,10 +42,6 @@ class PDFReader:
             sys.setrecursionlimit(2000) 
             self.parser = PDFParser(in_file)
             self.doc = PDFDocument(self.parser)
-            self.rsrcmgr = PDFResourceManager()
-            self.output_string = StringIO()
-            self.device = TextConverter(self.rsrcmgr, self.output_string, laparams=LAParams())
-            self.interpreter = PDFPageInterpreter(self.rsrcmgr, self.device)
             self.outlines = self.get_outlines()
             self.pages = self.get_pages()
             sys.setrecursionlimit(1000)
@@ -65,13 +60,18 @@ class PDFReader:
 
     def get_pages(self):
         pages = []
+        rsrcmgr = PDFResourceManager()
         for page_number, page in enumerate(PDFPage.create_pages(self.doc), start=1):
-            self.interpreter.process_page(page)
+            output_string = StringIO()
+            device = TextConverter(rsrcmgr, output_string, laparams=LAParams())
+            interpreter = PDFPageInterpreter(rsrcmgr, device)
+            interpreter.process_page(page)
             if page.annots:
                 page_comments = self.parse_page_comments(page)
             else:
                 page_comments = []            
-            page_text = self.output_string.getvalue()
+            page_text = output_string.getvalue()
+            output_string.flush()
             page_text = page_text.replace('\x0c', '').replace('\n', '')
             page = Page(number=page_number, text=page_text, comments=page_comments)
             pages.append(page)
@@ -79,7 +79,6 @@ class PDFReader:
 
     def parse_page_comments(self, page):
         page_comments = []
-        print(page.annots)
         for annot in pdftypes.resolve1(page.annots):
             por = PDFObjRef.resolve(annot)
             if 'Contents' in por.keys():
