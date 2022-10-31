@@ -1,4 +1,3 @@
-from pydoc import pager
 import sys
 import re
 from io import StringIO
@@ -12,10 +11,11 @@ from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdftypes import PDFObjRef
 from pdfminer.high_level import extract_text_to_fp
+from pdfminer import pdftypes
 
 from datetime import date, datetime
 from dataclasses import dataclass
-from typing import List
+from typing import Any, List
 
 @dataclass
 class Page:
@@ -28,36 +28,65 @@ class PDFData:
     outlines: list
     pages: list
 
+@dataclass
+class Outline:
+    level: int
+    title: str
+    dest: Any
+    a: Any
+    se: Any
+
 class PDFReader:
 
     def __init__(self, file_path):
-        with open(file_path, 'rb') as in_file: 
+        with open(file_path, 'rb') as in_file:
+            sys.setrecursionlimit(2000) 
             self.parser = PDFParser(in_file)
             self.doc = PDFDocument(self.parser)
             self.rsrcmgr = PDFResourceManager()
             self.output_string = StringIO()
             self.device = TextConverter(self.rsrcmgr, self.output_string, laparams=LAParams())
             self.interpreter = PDFPageInterpreter(self.rsrcmgr, self.device)
-            self.outlines = self.doc.get_outlines()
+            self.outlines = self.get_outlines()
             self.pages = self.get_pages()
-            # for page in pages: parse comment
-            
+            sys.setrecursionlimit(1000)
+
+    def read(self):
+        pdf_data = PDFData(outlines=self.outlines, pages=self.pages)
+        return pdf_data
+
+    def get_outlines(self):     
+        outlines = []
+        raw_outlines = self.doc.get_outlines()
+        for (level, title, dest, a, se) in raw_outlines:
+            outline = Outline(level=level, title=title, dest=dest, a=a, se=se)
+            outlines.append(outline)
+        return outlines
+
     def get_pages(self):
         pages = []
         for page_number, page in enumerate(PDFPage.create_pages(self.doc), start=1):
-            self.interpreter.process_page(page)            
-            page_text = self.output_string.getvalue()
+            self.interpreter.process_page(page)
             if page.annots:
-                page_comments = self.parse_page_comments(page.annots)
+                page_comments = self.parse_page_comments(page)
+            else:
+                page_comments = []            
+            page_text = self.output_string.getvalue()
+            page_text = page_text.replace('\x0c', '').replace('\n', '')
             page = Page(number=page_number, text=page_text, comments=page_comments)
             pages.append(page)
+        return pages
 
-    def parse_page_comments(self, annots):
+    def parse_page_comments(self, page):
         page_comments = []
-        for annot in annots:
+        print(page.annots)
+        for annot in pdftypes.resolve1(page.annots):
             por = PDFObjRef.resolve(annot)
             if 'Contents' in por.keys():
-                text = por['Contents'].decode('utf-8', 'ignore')
+                try:
+                    text = por['Contents'].decode('utf-8', 'ignore')
+                except UnicodeDecodeError as e:
+                    text = por['Contents']
                 page_comments.append(text)
         return page_comments
 
@@ -484,6 +513,7 @@ def scan_pdf_for_summary(pdf_path):
         
         for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
             if page.annots:
+                print(page.annots)
                 page_comments = parse_page_comments(page.annots)
                 if len(page_comments) > 0:
                     exhibit_id = mr.pages[pagenumber].exhibit_id
@@ -503,7 +533,11 @@ def scan_pdf_for_summary(pdf_path):
 
 def main():
     file_path = r'.\\files\\2909274-cecilia_phillips-case_file_exhibited_bookmarked-8-10-2022- w notes.pdf'
-    scan_pdf_for_summary(file_path)
+    #file_path = r'./tests/fakes/fake-pdf.pdf'
+    #scan_pdf_for_summary(file_path)
+    pdf_reader = PDFReader(file_path)
+    pdf_data = pdf_reader.read()
+    print(pdf_data)
 
 if __name__ == '__main__':
     main()
