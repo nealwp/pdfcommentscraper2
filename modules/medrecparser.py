@@ -2,8 +2,23 @@ import re
 from datetime import date, datetime
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Dict
-from modules.pdfscanner import PDFData, parse_page_text
+from typing import Dict, List
+from modules.pdfscanner import PDFData, Page, parse_page_text
+
+
+@dataclass
+class PageDetail:
+    '''detail for a page'''
+    exhibit_id: str
+    exhibit_page: int
+
+@dataclass
+class Comment:
+    '''annotations made to the medical record by the reviewer'''
+    date: datetime
+    text: str
+    page: int
+    exhibit_page: int
 
 @dataclass
 class Exhibit:
@@ -44,6 +59,18 @@ class Claimant:
             return onset_date.year - birthdate.year - ((onset_date.month, onset_date.day) < (birthdate.month, birthdate.day))
         else: 
             return None
+@dataclass
+class MedicalRecord2:
+    '''a social security pdf medical record'''
+    claimant: Claimant
+    exhibits: dict
+    pages: dict
+
+    def comment_count(self):
+        count = 0
+        for exhibit in self.exhibits.keys():
+            count += len(self.exhibits[exhibit].comments)
+        return count
 
 class MedicalRecord:
     
@@ -51,9 +78,11 @@ class MedicalRecord:
         self.pdf_data = pdf_data
         self.exhibits: Dict[Exhibit] = {}
         self.claimant: Claimant = Claimant()
+        self.page_details: Dict[PageDetail] = {}
         
         self.set_exhibits()
         self.set_claimant()
+        self.set_comments()
 
     def set_exhibits(self):
         index = 1
@@ -65,6 +94,7 @@ class MedicalRecord:
                 provider_name = provider.split(":")[1].replace("Doc. Dt.","").replace("Tmt. Dt.", "").strip()
                 provider_dates = re.sub(r"\(\d* page.*", "", provider.split(":")[2]).strip()
                 from_date = provider_dates.split("-")[0]
+
                 try:
                     to_date = provider_dates.split("-")[1]
                 except IndexError as e:
@@ -73,6 +103,10 @@ class MedicalRecord:
                 ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
                 self.exhibits[id] = ex
             if outline.level == 3:
+                exhibit_id = provider.split(":")[0]
+                exhibit_page = int(outline.title.split()[1])
+                page_detail = PageDetail(exhibit_id=exhibit_id,exhibit_page=exhibit_page)           
+                self.page_details[index] = page_detail
                 index += 1
     
     def set_claimant(self):         
@@ -84,14 +118,9 @@ class MedicalRecord:
         self.claimant.claim = client_info['Claim Type']
         self.claimant.pdof = datetime.strptime(client_info['Application'], '%m/%d/%Y')
         self.claimant.last_insured_date = client_info['Last Insured']
-        
-        
+                
         self.claimant.birthdate = self.find_client_date_of_birth()
 
-        # if not mr.claimant.birthdate:
-        #    mr.claimant.birthdate = 
-        #    if mr.claimant.birthdate:
-        #        break
 
         #if len(mr.claimant.work_history) == 0:
         #    mr.claimant.work_history = parse_work_history(page_text)
@@ -122,34 +151,20 @@ class MedicalRecord:
                         date_of_birth = dob.split(": ")[1]
                         break
 
-        return date_of_birth 
+        return date_of_birth
 
-@dataclass
-class PageDetail:
-    '''detail for a page'''
-    exhibit_id: str
-    exhibit_page: int
+    def set_comments(self):
+        for index, page in enumerate(self.pdf_data.pages, start=1):
+            if len(page.comments) > 0:
+                exhibit_id = self.page_details[index].exhibit_id
+                exhibit_page = self.page_details[index].exhibit_page
+                for comment in page.comments:
+                    comment = parse_comment(comment)
+                    date = comment['date']
+                    text = comment['text']
+                    cm = Comment(date=date, text=text, page=index, exhibit_page=exhibit_page)
+                    self.exhibits[exhibit_id].comments.append(cm) 
 
-@dataclass
-class Comment:
-    '''annotations made to the medical record by the reviewer'''
-    date: datetime
-    text: str
-    page: int
-    exhibit_page: int
-
-@dataclass
-class MedicalRecord2:
-    '''a social security pdf medical record'''
-    claimant: Claimant
-    exhibits: dict
-    pages: dict
-
-    def comment_count(self):
-        count = 0
-        for exhibit in self.exhibits.keys():
-            count += len(self.exhibits[exhibit].comments)
-        return count
 
 def parse_comment(comment):
     comment = comment.split(";")
@@ -165,32 +180,6 @@ def parse_comment(comment):
         'provider': provider
     }
     return data
-
-def get_page_details_from_pdf(doc):
-    try:
-        outlines = doc.get_outlines()
-        index = 1
-        provider = ''
-        pages = {}
-        sys.setrecursionlimit(2000)
-        for (level, title, dest, a, se) in outlines:
-            if level == 2:              
-                provider = title
-            if level == 3:
-                index += 1
-                exhibit_id = provider.split(":")[0]
-                exhibit_page = int(title.split()[1])
-                pg = PageDetail(exhibit_id=exhibit_id,exhibit_page=exhibit_page)           
-                pages[index] = pg
-    except PDFNoOutlines as e:
-        sys.setrecursionlimit(1000)
-        pages = {}
-        print('PDF has no outlines to reference.')
-
-    sys.setrecursionlimit(1000)
-    return pages
-
-
 
 def scan_for_comments(pdf_path):
 
@@ -239,20 +228,6 @@ def scan_for_comments(pdf_path):
     
     comments = sorted(comments, key=lambda el: el['ref'])
     return comments                      
-
-def parse_page_comments(annots):
-
-    page_comments = []
-    for annot in annots:
-        por = PDFObjRef.resolve(annot)
-        if 'Contents' in por.keys():
-            text = por['Contents'].decode('utf-8', 'ignore')
-            comment = parse_comment(text)
-            page_comments.append(comment)
-
-    return page_comments
-
-
 
 def parse_work_history(page_text):
     work_history = []
@@ -384,37 +359,13 @@ def scan_pdf_for_summary(pdf_path):
     mr = MedicalRecord(claimant=None, exhibits={}, pages={})  
 
     with open(pdf_path, 'rb') as in_file: 
-        parser = PDFParser(in_file)
-        doc = PDFDocument(parser)
-        rsrcmgr = PDFResourceManager()
-        output_string = StringIO()
-        device = TextConverter(rsrcmgr, output_string, laparams=LAParams())
-        interpreter = PDFPageInterpreter(rsrcmgr, device)
 
-        mr.exhibits = get_exhibits_from_pdf(doc)
         mr.pages = get_page_details_from_pdf(doc)             
         mr.claimant = Claimant(work_history=[])
 
-        for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
-            interpreter.process_page(page)            
-            page_text = output_string.getvalue() 
-            if pagenumber == 1:
-                client_info = parse_client_info(page_text)
-                mr.claimant.name = client_info['Claimant']
-                mr.claimant.ssn = client_info['SSN']
-                mr.claimant.onset_date = client_info['Alleged Onset']
-                mr.claimant.claim = client_info['Claim Type']
-                mr.claimant.pdof = datetime.strptime(client_info['Application'], '%m/%d/%Y')
-                mr.claimant.last_insured_date = client_info['Last Insured']
-                mr.claimant.birthdate = None
-            if not mr.claimant.birthdate:
-                mr.claimant.birthdate = parse_client_date_of_birth(page_text)
-                if mr.claimant.birthdate:
-                    break
-
-            if len(mr.claimant.work_history) == 0:
-                mr.claimant.work_history = parse_work_history(page_text)
-            #parse_ability_ratings(page_text)
+        if len(mr.claimant.work_history) == 0:
+            mr.claimant.work_history = parse_work_history(page_text)
+        #parse_ability_ratings(page_text)
         
         for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
             if page.annots:
