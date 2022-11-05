@@ -2,41 +2,16 @@ import re
 from datetime import date, datetime
 from dataclasses import dataclass
 from time import perf_counter
+from typing import Dict
+from modules.pdfscanner import PDFData, parse_page_text
 
-class MedicalRecord2:
-    
-    def __init__(self, file_path):
-        self.exhibits = {}
-        with open(file_path, 'rb') as in_file: 
-            self.parser = PDFParser(in_file)
-            self.doc = PDFDocument(self.parser)
-            self.rsrcmgr = PDFResourceManager()
-            self.output_string = StringIO()
-            self.device = TextConverter(self.rsrcmgr, self.output_string, laparams=LAParams())
-            self.interpreter = PDFPageInterpreter(self.rsrcmgr, self.device)
-            self.set_exhibits()
-
-    def set_exhibits(self):
-        self.outlines = self.doc.get_outlines()
-        index = 1
-        provider = ''
-        sys.setrecursionlimit(2000)
-        for (level, title, dest, a, se) in self.outlines:
-            if level == 2:              
-                provider = title
-                id = provider.split(":")[0]
-                provider_name = provider.split(":")[1].replace("Doc. Dt.","").replace("Tmt. Dt.", "").strip()
-                provider_dates = re.sub(r"\(\d* page.*", "", provider.split(":")[2]).strip()
-                from_date = provider_dates.split("-")[0]
-                try:
-                    to_date = provider_dates.split("-")[1]
-                except IndexError as e:
-                    to_date = from_date
-                
-                ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
-                self.exhibits[id] = ex
-            if level == 3:
-                index += 1
+@dataclass
+class Exhibit:
+    '''a section of the medical record'''
+    provider_name: str
+    from_date: str
+    to_date: str
+    comments: list
 
 @dataclass
 class Claimant:
@@ -70,13 +45,84 @@ class Claimant:
         else: 
             return None
 
-@dataclass
-class Exhibit:
-    '''a section of the medical record'''
-    provider_name: str
-    from_date: str
-    to_date: str
-    comments: list
+class MedicalRecord:
+    
+    def __init__(self, pdf_data: PDFData):
+        self.pdf_data = pdf_data
+        self.exhibits: Dict[Exhibit] = {}
+        self.claimant: Claimant = Claimant()
+        
+        self.set_exhibits()
+        self.set_claimant()
+
+    def set_exhibits(self):
+        index = 1
+        provider = ''
+        for outline in self.pdf_data.outlines:
+            if outline.level == 2:              
+                provider = outline.title
+                id = provider.split(":")[0]
+                provider_name = provider.split(":")[1].replace("Doc. Dt.","").replace("Tmt. Dt.", "").strip()
+                provider_dates = re.sub(r"\(\d* page.*", "", provider.split(":")[2]).strip()
+                from_date = provider_dates.split("-")[0]
+                try:
+                    to_date = provider_dates.split("-")[1]
+                except IndexError as e:
+                    to_date = from_date
+                
+                ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
+                self.exhibits[id] = ex
+            if outline.level == 3:
+                index += 1
+    
+    def set_claimant(self):         
+        page_text = parse_page_text(self.pdf_data.pages[0].raw_page)
+        client_info = self.parse_client_info(page_text)
+        self.claimant.name = client_info['Claimant']
+        self.claimant.ssn = client_info['SSN']
+        self.claimant.onset_date = client_info['Alleged Onset']
+        self.claimant.claim = client_info['Claim Type']
+        self.claimant.pdof = datetime.strptime(client_info['Application'], '%m/%d/%Y')
+        self.claimant.last_insured_date = client_info['Last Insured']
+        
+        
+        self.claimant.birthdate = self.find_client_date_of_birth()
+
+        # if not mr.claimant.birthdate:
+        #    mr.claimant.birthdate = 
+        #    if mr.claimant.birthdate:
+        #        break
+
+        #if len(mr.claimant.work_history) == 0:
+        #    mr.claimant.work_history = parse_work_history(page_text)
+        #parse_ability_ratings(page_text)
+        # 
+
+    def parse_client_info(self, page_text):
+        lines = page_text.splitlines()
+        lines = [line for line in lines if line]
+        client_data = lines[:7]
+        client_info = {}
+        for e in client_data:
+            e = e.split(':')
+            client_info[e[0]] = e[1].lstrip()
+        return client_info
+
+    def find_client_date_of_birth(self):
+        for page in self.pdf_data.pages:
+            page_text = parse_page_text(page.raw_page)
+            date_of_birth = None
+            pattern = re.compile(r'date of birth: \d{1,2}\/\d{1,2}\/\d{4}', re.IGNORECASE)
+            lines = page_text.splitlines()
+            for line in lines:
+                if 'date of birth: ' in line.lower():
+                    matchObj = re.search(pattern, page_text)
+                    if matchObj:
+                        dob = matchObj.group(0)
+                        date_of_birth = dob.split(": ")[1]
+                        break
+
+        return date_of_birth 
 
 @dataclass
 class PageDetail:
@@ -93,7 +139,7 @@ class Comment:
     exhibit_page: int
 
 @dataclass
-class MedicalRecord:
+class MedicalRecord2:
     '''a social security pdf medical record'''
     claimant: Claimant
     exhibits: dict
@@ -120,38 +166,6 @@ def parse_comment(comment):
     }
     return data
 
-def get_exhibits_from_pdf(doc):
-    try:
-        outlines = doc.get_outlines()
-        sys.setrecursionlimit(999999999)
-        index = 1
-        provider = ''
-        exhibits = {}
-        for (level, title, dest, a, se) in outlines:
-            if level == 2:              
-                provider = title
-                id = provider.split(":")[0]
-                provider_name = provider.split(":")[1].replace("Doc. Dt.","").replace("Tmt. Dt.", "").strip()
-                provider_dates = re.sub(r"\(\d* page.*", "", provider.split(":")[2]).strip()
-                from_date = provider_dates.split("-")[0]
-                try:
-                    to_date = provider_dates.split("-")[1]
-                except IndexError as e:
-                    to_date = from_date
-                
-                ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
-                exhibits[id] = ex
-            if level == 3:
-                index += 1
-            
-    except PDFNoOutlines as e:
-        exhibits = {}
-        sys.setrecursionlimit(1000)
-        print('PDF has no outlines to reference.')
-
-    sys.setrecursionlimit(1000)
-    return exhibits
-
 def get_page_details_from_pdf(doc):
     try:
         outlines = doc.get_outlines()
@@ -176,16 +190,7 @@ def get_page_details_from_pdf(doc):
     sys.setrecursionlimit(1000)
     return pages
 
-def parse_client_info(page_text):
 
-    lines = page_text.splitlines()
-    lines = [line for line in lines if line]
-    client_data = lines[:7]
-    client_info = {}
-    for e in client_data:
-        e = e.split(':')
-        client_info[e[0]] = e[1].lstrip()
-    return client_info
 
 def scan_for_comments(pdf_path):
 
@@ -247,20 +252,7 @@ def parse_page_comments(annots):
 
     return page_comments
 
-def parse_client_date_of_birth(page_text):
 
-    date_of_birth = None
-    pattern = re.compile(r'date of birth: \d{1,2}\/\d{1,2}\/\d{4}', re.IGNORECASE)
-    lines = page_text.splitlines()
-    for line in lines:
-        if 'date of birth: ' in line.lower():
-            matchObj = re.search(pattern, page_text)
-            if matchObj:
-                dob = matchObj.group(0)
-                date_of_birth = dob.split(": ")[1]
-                break
-
-    return date_of_birth
 
 def parse_work_history(page_text):
     work_history = []

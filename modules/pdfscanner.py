@@ -14,13 +14,8 @@ from typing import Any
 @dataclass
 class Page:
     number: int
-    text: str
+    raw_page: str
     comments: list
-
-@dataclass
-class PDFData:
-    outlines: list
-    pages: list
 
 @dataclass
 class Outline:
@@ -30,9 +25,14 @@ class Outline:
     a: Any
     se: Any
 
+@dataclass
+class PDFData:
+    outlines: list[Outline]
+    pages: list[Page]
+
 class PDFReader:
 
-    def __init__(self, file_path):
+    def __init__(self, file_path, parse_page_text=False):
         with open(file_path, 'rb') as in_file:
             sys.setrecursionlimit(2000) 
             self.parser = PDFParser(in_file)
@@ -55,20 +55,12 @@ class PDFReader:
 
     def get_pages(self):
         pages = []
-        rsrcmgr = PDFResourceManager()
         for page_number, page in enumerate(PDFPage.create_pages(self.doc), start=1):
-            output_string = StringIO()
-            device = TextConverter(rsrcmgr, output_string, laparams=LAParams())
-            interpreter = PDFPageInterpreter(rsrcmgr, device)
-            interpreter.process_page(page)
             if page.annots:
                 page_comments = self.parse_page_comments(page)
             else:
-                page_comments = []            
-            page_text = output_string.getvalue()
-            output_string.flush()
-            page_text = page_text.replace('\x0c', '').replace('\n', '')
-            page = Page(number=page_number, text=page_text, comments=page_comments)
+                page_comments = []
+            page = Page(number=page_number, raw_page=page, comments=page_comments)
             pages.append(page)
         return pages
 
@@ -84,12 +76,25 @@ class PDFReader:
                 page_comments.append(text)
         return page_comments
 
+def parse_page_text(raw_page):
+    if type(raw_page) == PDFPage:
+        rsrcmgr = PDFResourceManager()
+        output_string = StringIO()
+        device = TextConverter(rsrcmgr, output_string, laparams=LAParams())
+        interpreter = PDFPageInterpreter(rsrcmgr, device)
+        interpreter.process_page(raw_page)            
+        page_text = output_string.getvalue()
+        output_string.flush()
+        page_text = page_text.replace('\x0c', '').replace('\n', '')
+    else: page_text = raw_page
+    return page_text
+
 def main():
     file_path = r'.\\files\\2909274-cecilia_phillips-case_file_exhibited_bookmarked-8-10-2022- w notes.pdf'
     #file_path = r'./tests/fakes/fake-pdf.pdf'
     pdf_reader = PDFReader(file_path)
     pdf_data = pdf_reader.read()
-    print(pdf_data)
+    print(pdf_data.pages[0].raw_page)
 
 if __name__ == '__main__':
     main()
