@@ -1,6 +1,5 @@
 from modules.medrecparser import *
 from modules.pdfscanner import PDFData, Outline, Page
-from pdfminer.pdfpage import PDFPage
 
 fake_outlines = [
     Outline(
@@ -59,3 +58,5 @@ def test_MedicalRecord_claimant():
 
 def test_MedicalRecord_comments():
     mr = MedicalRecord(fake_pdf_data)
+    expected_comment = Comment(date='5/1/2022', text=' here\'s a comment', page=1, exhibit_page=1)
+    assert(mr.exhibits['1F'].comments[0]) == expected_comment
