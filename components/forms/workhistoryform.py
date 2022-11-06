@@ -1,7 +1,7 @@
 from tkinter import Tk, StringVar, Button, Label, Entry, Toplevel
 from tkinter.ttk import Combobox
 
-from components.helpers import center
+import helpers
 
 class WorkHistoryForm(Toplevel):
     def __init__(self, parent):
@@ -42,7 +42,7 @@ class WorkHistoryForm(Toplevel):
         self.close_btn = Button(self, text='Close', width=12, command=self.destroy)
         self.close_btn.grid(column=0, row=2, columnspan=4, pady=4)
 
-        center(self)
+        helpers.center(self)
         self.attributes('-alpha', 1.0)
     
     def _add_entry(self):

@@ -1,7 +1,7 @@
 from tkinter import Tk, Button, Label, Entry, Toplevel
 from configparser import ConfigParser
 
-from components.helpers import on_enter, on_leave, center
+from .helpers import on_enter, on_leave, center
 
 config = ConfigParser()
 
