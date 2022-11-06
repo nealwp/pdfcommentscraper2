@@ -109,8 +109,8 @@ class MedicalRecord:
                 self.page_details[index] = page_detail
                 index += 1
     
-    def set_claimant(self):         
-        page_text = parse_page_text(self.pdf_data.pages[0].raw_page)
+    def set_claimant(self):       
+        page_text = parse_page_text(self.pdf_data.pages[0].raw_page, clean=False)
         client_info = self.parse_client_info(page_text)
         self.claimant.name = client_info['Claimant']
         self.claimant.ssn = client_info['SSN']
@@ -150,11 +150,13 @@ class MedicalRecord:
                         dob = matchObj.group(0)
                         date_of_birth = dob.split(": ")[1]
                         break
-
+            if date_of_birth:
+                break
         return date_of_birth
 
     def set_comments(self):
         for index, page in enumerate(self.pdf_data.pages, start=1):
+            print("Scanning page [%d] for comments...\r"%index, end="")
             if len(page.comments) > 0:
                 exhibit_id = self.page_details[index].exhibit_id
                 exhibit_page = self.page_details[index].exhibit_page

@@ -32,14 +32,13 @@ class PDFData:
 
 class PDFReader:
 
-    def __init__(self, file_path, parse_page_text=False):
-        with open(file_path, 'rb') as in_file:
-            sys.setrecursionlimit(2000) 
-            self.parser = PDFParser(in_file)
-            self.doc = PDFDocument(self.parser)
-            self.outlines = self.get_outlines()
-            self.pages = self.get_pages()
-            sys.setrecursionlimit(1000)
+    def __init__(self, in_file):
+        sys.setrecursionlimit(2000) 
+        self.parser = PDFParser(in_file)
+        self.doc = PDFDocument(self.parser)
+        self.outlines = self.get_outlines()
+        self.pages = self.get_pages()
+        sys.setrecursionlimit(1000)
 
     def read(self):
         pdf_data = PDFData(outlines=self.outlines, pages=self.pages)
@@ -76,7 +75,7 @@ class PDFReader:
                 page_comments.append(text)
         return page_comments
 
-def parse_page_text(raw_page):
+def parse_page_text(raw_page, clean=True):
     if type(raw_page) == PDFPage:
         rsrcmgr = PDFResourceManager()
         output_string = StringIO()
@@ -85,7 +84,8 @@ def parse_page_text(raw_page):
         interpreter.process_page(raw_page)            
         page_text = output_string.getvalue()
         output_string.flush()
-        page_text = page_text.replace('\x0c', '').replace('\n', '')
+        if clean:
+            page_text = page_text.replace('\x0c', '').replace('\n', '')
     else: page_text = raw_page
     return page_text
 
