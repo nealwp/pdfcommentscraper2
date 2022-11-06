@@ -1,3 +1,5 @@
+import pytest
+
 from components.workhistory import *
 
 def test_new_work_history_should_be_empty():
@@ -26,3 +28,9 @@ def test_should_allow_multiple_new_entry():
     entry_2 = WorkHistoryEntry("Worker","Heavy","Unskilled")
     work_history.add(entry_2)
     assert(len(work_history.entries)) == 2
+
+def test_should_not_allow_invalid_entries():
+    work_history = WorkHistory()
+    entry = 'gobbledygook'
+    with pytest.raises(TypeError):
+        work_history.add(entry) 

@@ -11,6 +11,8 @@ class WorkHistory:
         self._entries = []
 
     def add(self, entry: WorkHistoryEntry):
+        if not type(entry)  == WorkHistoryEntry:
+            raise TypeError
         self._entries.append(entry)
 
     @property
