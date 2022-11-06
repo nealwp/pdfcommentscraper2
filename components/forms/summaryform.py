@@ -4,8 +4,8 @@ from tkinter.ttk import Combobox
 from datetime import date, datetime
 
 from .commentsform import CommentViewer
-from .workhistoryform import WorkHistoryForm
-from .helpers import on_enter, on_leave, center, get_save_path
+from work_history.workhistoryform import WorkHistoryForm
+from ..helpers import on_enter, on_leave, center, get_save_path
 
 class SummaryForm(Toplevel):
     def __init__(self, parent):

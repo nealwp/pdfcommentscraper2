@@ -1,5 +1,7 @@
-from tkinter import Tk, StringVar, Button, Label, Entry, Toplevel
+from tkinter import Tk, StringVar, Button, Label, Entry, Toplevel, END
 from tkinter.ttk import Combobox
+
+from WorkHistory import WorkHistory, WorkHistoryEntry
 
 import helpers
 
@@ -46,19 +48,25 @@ class WorkHistoryForm(Toplevel):
         self.attributes('-alpha', 1.0)
     
     def _add_entry(self):
-        entry = {
-            'job_title': self.job_title_entry.get(),
-            'intensity': self.intensity_txtVar.get(),
-            'skill_level': self.skill_level_txtVar.get()
-        }
+        job_title = self.job_title_entry.get()
+        intensity = self.intensity_txtVar.get()
+        skill_level = self.skill_level_txtVar.get()
 
-        self.parent.work_history.append(entry)
-        self.parent._paint_work_history()
+        entry = WorkHistoryEntry(job_title, intensity, skill_level)
+
+        self.parent.work_history.add(entry)
+        print(self.parent.work_history.entries)
+        #self.parent._paint_work_history()
+        self._reset()
         self.parent.update()
+
+    def _reset(self):
+        self.job_title_entry.delete(0, END)
 
 def main():
     app = Tk()
-    work_history = WorkHistoryForm(app)
+    app.work_history = WorkHistory()
+    work_history = WorkHistoryForm(app) 
     app.mainloop()
     return
 

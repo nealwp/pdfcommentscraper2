@@ -3,7 +3,7 @@ from tkinter import Tk, BOTTOM, X
 
 from components.forms.statusbar import StatusBar
 from components.forms.menubar import MenuBar
-from components.forms.helpers import center
+from components.helpers import center
 
 class App(Tk):
     def __init__(self, *args, **kwargs) -> None:
