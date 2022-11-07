@@ -5,7 +5,7 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_UNDERLINE
 from docx.enum.style import WD_STYLE_TYPE
 from datetime import datetime
 
-from modules.medrecparser import Exhibit
+from medrecparser import Exhibit
 
 def generate_chronological_medical_summary(data):
     doc = docx.Document()

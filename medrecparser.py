@@ -3,7 +3,7 @@ from datetime import date, datetime
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Dict, List
-from modules.pdfscanner import PDFData, parse_page_text
+from pdfscanner import PDFData, parse_page_text
 
 
 @dataclass

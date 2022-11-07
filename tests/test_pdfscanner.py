@@ -1,4 +1,4 @@
-from modules.pdfscanner import *
+from pdfscanner import *
 
 file_path = r'./tests/fakes/fake-pdf.pdf'
 

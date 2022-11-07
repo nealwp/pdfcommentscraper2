@@ -1,35 +1,42 @@
-from csv import writer, DictWriter, QUOTE_MINIMAL
+from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import asksaveasfilename
 
-from os import path, remove, system
-from re import sub
-from tkinter import Tk
+def center(win):
+    """
+    centers a tkinter window
+    :param win: the main window or Toplevel window to center
+    """
+    win.update_idletasks()
+    width = win.winfo_width()
+    frm_width = win.winfo_rootx() - win.winfo_x()
+    win_width = width + 2 * frm_width
+    height = win.winfo_height()
+    titlebar_height = win.winfo_rooty() - win.winfo_y()
+    win_height = height + titlebar_height + frm_width
+    x = win.winfo_screenwidth() // 2 - win_width // 2
+    y = win.winfo_screenheight() // 2 - win_height // 2
+    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+    win.deiconify()
 
-from datetime import date, datetime
+def on_enter(e):
+    e.widget['background'] = '#ddd'
 
-def write_csv(file_name: str, heads: list, rows: list) -> None:
-    """ Take a path, header list, and 2D list of data rows and writes to CSV file """
-    if path.exists(file_name):
-        remove(file_name)
+def on_leave(e):
+    e.widget['background'] = 'SystemButtonFace'
 
-    with open(file_name, 'w', newline='') as cf:
-        cw = writer(cf, delimiter=',', quotechar='"', quoting=QUOTE_MINIMAL)
-        cw.writerow(heads)
-        [cw.writerow(row) for row in rows]
-    return
+def get_file_path() -> str:
+    """ Displays open dialog and returns a file path """
+    file_path = askopenfilename(filetypes=[("PDF files", "*.pdf")])
+    return file_path
 
-def strip_non_printable_chars(str) -> str:
-    fixed = sub('[^A-Za-z0-9\.\,\!\:\;\(\)\'\"\\n\-\/]+', ' ', str)
-    #fixed = ''.join(filter(lambda x: x in printable, str))
-    return fixed
+def get_save_path(file_type) -> str:
+    """ Displays save as dialog and return a file path """
+    types = {
+        'csv': ('CSV Files', '*.csv'),
+        'docx': ('MS Word Files', '*.docx')
+    }
 
-def get_age(birthdate):
-    today = date.today()
-    birthdate = datetime.strptime(birthdate, '%m/%d/%Y')
-    age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
-    return age
+    save_as_type = types[file_type]
 
-def get_age_at_onset(birthdate, onset_date):
-    birthdate = datetime.strptime(birthdate, '%m/%d/%Y')
-    onset_date = datetime.strptime(onset_date, '%m/%d/%Y')
-    age_at_onset = onset_date.year - birthdate.year - ((onset_date.month, onset_date.day) < (birthdate.month, birthdate.day))
-    return age_at_onset
+    save_path = asksaveasfilename(filetypes=[save_as_type], defaultextension=[save_as_type])
+    return save_path

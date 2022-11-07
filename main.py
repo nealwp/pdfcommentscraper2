@@ -1,9 +1,9 @@
 import re
 from tkinter import Tk, BOTTOM, X
 
-from components.forms.statusbar import StatusBar
-from components.forms.menubar import MenuBar
-from components.helpers import center
+from StatusBar import StatusBar
+from MenuBar import MenuBar
+from helpers import center
 
 class App(Tk):
     def __init__(self, *args, **kwargs) -> None:

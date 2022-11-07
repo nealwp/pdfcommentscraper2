@@ -1,9 +1,8 @@
 from tkinter import Tk, Button, Label, Entry, Toplevel
-from configparser import ConfigParser
+import helpers
+from AppConfig import AppConfig
 
-from .helpers import on_enter, on_leave, center
-
-config = ConfigParser()
+config = AppConfig()
 
 class ContextSizeForm(Toplevel):
     def __init__(self, parent):
@@ -23,29 +22,24 @@ class ContextSizeForm(Toplevel):
         self.words_plus_entry = Entry(self, width=3, bd=1)
         self.words_plus_entry.grid(column=1, row=1, sticky='e', padx=10, pady=3)
 
-        done_btn = Button(self, text='Apply', command=self._set_context_settings)
-        done_btn.bind("<Enter>", on_enter)
-        done_btn.bind("<Leave>", on_leave)
+        done_btn = Button(self, text='Apply', command=self.save_context_settings)
+        done_btn.bind("<Enter>", helpers.on_enter)
+        done_btn.bind("<Leave>", helpers.on_leave)
         done_btn.grid(column=0, row=3, columnspan=2, pady=3)
         
-        self._get_context_settings()
-        center(self)
+        self.get_context_settings()
+        helpers.center(self)
         self.attributes('-alpha', 1.0)
 
-    def _get_context_settings(self):
-        config.read('./config/config.ini')
-        self.words_minus_entry.insert(0, config['Keywords']['ContextBefore'])
-        self.words_plus_entry.insert(0, config['Keywords']['ContextAfter'])
+    def get_context_settings(self):
+        self.words_minus_entry.insert(0, config.keywords_context_before)
+        self.words_plus_entry.insert(0, config.keywords_context_after)
 
-    def _set_context_settings(self):
-        context_before = self.words_minus_entry.get()
-        context_after = self.words_plus_entry.get()
-
-        config.read('./config/config.ini')
-        config['Keywords']['ContextBefore'] = context_before
-        config['Keywords']['ContextAfter'] = context_after
-        with open('./config/config.ini', 'w') as configfile:
-            config.write(configfile)
+    def save_context_settings(self):
+        config.keywords_context_before = self.words_minus_entry.get()
+        config.keywords_context_after = self.words_plus_entry.get()
+        config.save()
+        self.destroy()
 
 def main():
     app = Tk()

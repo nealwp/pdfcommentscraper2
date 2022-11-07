@@ -1,11 +1,11 @@
-from tkinter import LabelFrame, StringVar, Text, Button, Label, Entry, Toplevel
+from tkinter import Tk, LabelFrame, StringVar, Text, Button, Label, Entry, Toplevel
 from tkinter.ttk import Combobox
 
 from datetime import date, datetime
 
-from .commentsform import CommentViewer
-from work_history.workhistoryform import WorkHistoryForm
-from ..helpers import on_enter, on_leave, center, get_save_path
+from CommentsForm import CommentViewer
+from WorkHistoryForm import WorkHistoryForm
+from helpers import on_enter, on_leave, center, get_save_path
 
 class SummaryForm(Toplevel):
     def __init__(self, parent):
@@ -265,3 +265,12 @@ def get_age_at_onset(birthdate, onset_date):
     onset_date = datetime.strptime(onset_date, '%m/%d/%Y')
     age_at_onset = onset_date.year - birthdate.year - ((onset_date.month, onset_date.day) < (birthdate.month, birthdate.day))
     return age_at_onset
+
+def main():
+    app = Tk()
+    summary_form = SummaryForm(app)
+    app.mainloop()
+    return
+
+if __name__ == '__main__':
+    main()

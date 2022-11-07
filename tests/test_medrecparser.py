@@ -1,5 +1,5 @@
-from modules.medrecparser import *
-from modules.pdfscanner import PDFData, Outline, Page
+from medrecparser import *
+from pdfscanner import PDFData, Outline, Page
 
 fake_outlines = [
     Outline(

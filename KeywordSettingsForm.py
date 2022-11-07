@@ -1,9 +1,8 @@
 from tkinter import Tk, END, Listbox, Scrollbar, Button, Label, Entry, Toplevel, Frame
-from configparser import ConfigParser
+from helpers import on_enter, on_leave, center
+from AppConfig import AppConfig
 
-from .helpers import on_enter, on_leave, center
-
-config = ConfigParser()
+config = AppConfig()
 
 class KeywordSettingsForm(Toplevel):
     def __init__(self, parent):
