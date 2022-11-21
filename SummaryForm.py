@@ -5,13 +5,14 @@ from datetime import date, datetime
 
 from CommentsForm import CommentViewer
 from WorkHistoryForm import WorkHistoryForm
+from WorkHistory import WorkHistory, WorkHistoryEntry
 from helpers import on_enter, on_leave, center, get_save_path
 
 class SummaryForm(Toplevel):
     def __init__(self, parent):
         super().__init__(parent, padx=15, pady=15)
         self.parent = parent
-        self.work_history = []
+        self.work_history = WorkHistory()
         self.pdf_comments = []
         self.medical_record = None
         self.pdf_path = ""
@@ -117,6 +118,7 @@ class SummaryForm(Toplevel):
         
         self.work_history_frame = LabelFrame(self, text="Work History")
         self.work_history_frame.grid(column=2, row=1, columnspan=2, rowspan=12, sticky='n', pady=10)
+        self.work_history_frame.bind("<<CustomEvent>>", self._paint_work_history)
 
         cancel_btn = Button(self, text='Cancel', width=20, command=self.destroy)
         cancel_btn.bind("<Enter>", on_enter)
@@ -129,6 +131,7 @@ class SummaryForm(Toplevel):
         done_btn.grid(column=1, row=99, columnspan=2, padx=10, pady=4)
 
         center(self)
+        self._paint_work_history()
         self.attributes('-alpha', 1.0)
 
     def _open_work_history_form(self):
@@ -148,10 +151,14 @@ class SummaryForm(Toplevel):
         self.deiconify()
 
     def _paint_work_history(self):
-        for i, entry in enumerate(self.work_history, start=1):
-            entry_text = f'{i}. {entry["job_title"]} : {entry["intensity"]} : {entry["skill_level"]}'
+        print('caught custom event')
+        entry: WorkHistoryEntry
+        for i, entry in enumerate(self.work_history.entries, start=1):
+            entry_text = f'{i}. {entry.job_title} : {entry.intensity} : {entry.skill_level}'
             label = Label(self.work_history_frame, text=entry_text)
             label.grid(column=0, row=i+1, padx=10, pady=2, sticky='w')
+        self.update_idletasks()
+        self.update()
 
     def _scan_for_comments(self):
         if not self.pdf_path:

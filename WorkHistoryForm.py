@@ -55,17 +55,21 @@ class WorkHistoryForm(Toplevel):
         entry = WorkHistoryEntry(job_title, intensity, skill_level)
 
         self.parent.work_history.add(entry)
-        print(self.parent.work_history.entries)
-        #self.parent._paint_work_history()
+        self.parent.event_generate("<<CustomEvent>>")
+        # self.parent._paint_work_history()
         self._reset()
         self.parent.update()
 
     def _reset(self):
         self.job_title_entry.delete(0, END)
 
+def fake_paint_work_history(self):
+     print(self.work_history.entries)
+
 def main():
     app = Tk()
     app.work_history = WorkHistory()
+    app._paint_work_hisory = fake_paint_work_history
     work_history = WorkHistoryForm(app) 
     app.mainloop()
     return
