@@ -24,7 +24,7 @@ class MenuBar(Menu):
 
         self.filemenu = Menu(self, tearoff=0)
         self.filemenu.add_command(label='New Summary', command=self._new_summary_form)
-        self.filemenu.add_command(label='Check for Updates', command=self._check_for_updates)
+        self.filemenu.add_command(label='Check for Updates', command=self._check_for_updates, state='disabled')
         self.filemenu.add_command(label="Exit", command=self.parent.destroy)
         self.add_cascade(label="File", menu=self.filemenu)
 
