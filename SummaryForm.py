@@ -118,7 +118,7 @@ class SummaryForm(Toplevel):
         
         self.work_history_frame = LabelFrame(self, text="Work History")
         self.work_history_frame.grid(column=2, row=1, columnspan=2, rowspan=12, sticky='n', pady=10)
-        self.work_history_frame.bind("<<CustomEvent>>", self._paint_work_history)
+        
 
         cancel_btn = Button(self, text='Cancel', width=20, command=self.destroy)
         cancel_btn.bind("<Enter>", on_enter)
@@ -151,7 +151,6 @@ class SummaryForm(Toplevel):
         self.deiconify()
 
     def _paint_work_history(self):
-        print('caught custom event')
         entry: WorkHistoryEntry
         for i, entry in enumerate(self.work_history.entries, start=1):
             entry_text = f'{i}. {entry.job_title} : {entry.intensity} : {entry.skill_level}'

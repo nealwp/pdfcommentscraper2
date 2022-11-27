@@ -51,12 +51,9 @@ class WorkHistoryForm(Toplevel):
         job_title = self.job_title_entry.get()
         intensity = self.intensity_txtVar.get()
         skill_level = self.skill_level_txtVar.get()
-
         entry = WorkHistoryEntry(job_title, intensity, skill_level)
-
         self.parent.work_history.add(entry)
-        self.parent.event_generate("<<CustomEvent>>")
-        # self.parent._paint_work_history()
+        self.parent._paint_work_history()
         self._reset()
         self.parent.update()
 
