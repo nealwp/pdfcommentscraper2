@@ -6,7 +6,9 @@ from datetime import date, datetime
 from CommentsForm import CommentViewer
 from WorkHistoryForm import WorkHistoryForm
 from WorkHistory import WorkHistory, WorkHistoryEntry
-from helpers import on_enter, on_leave, center, get_save_path
+from helpers import get_file_path, on_enter, on_leave, center, get_save_path
+from medrecparser import MedicalRecord
+from pdfscanner import PDFReader
 
 class SummaryForm(Toplevel):
     def __init__(self, parent):
@@ -161,7 +163,7 @@ class SummaryForm(Toplevel):
 
     def _scan_for_comments(self):
         if not self.pdf_path:
-            self.pdf_path = 'TODO' #get_file_path()
+            self.pdf_path = get_file_path()
         
         self.pdf_comments = 'TODO' #scan_for_comments(self.pdf_path)
         
@@ -176,9 +178,14 @@ class SummaryForm(Toplevel):
 
     def _get_summary_data(self):
         if not self.pdf_path:
-            self.pdf_path = 'TODO' #get_file_path()
+            self.pdf_path = get_file_path()
         self.deiconify()
-        self.medical_record = 'TODO' #scan_pdf_for_summary(self.pdf_path)
+
+        with open(self.pdf_path, 'rb') as fp:
+            pdf_reader = PDFReader(fp)
+            pdf_data = pdf_reader.read()
+            self.medical_record = MedicalRecord(pdf_data)
+
         self._fill_entry_fields()
         self.update()
         
