@@ -33,7 +33,7 @@ class PDFData:
 class PDFReader:
 
     def __init__(self, in_file):
-        sys.setrecursionlimit(2000) 
+        sys.setrecursionlimit(2000)
         self.parser = PDFParser(in_file)
         self.doc = PDFDocument(self.parser)
         self.outlines = self.get_outlines()
@@ -92,9 +92,10 @@ def parse_page_text(raw_page, clean=True):
 def main():
     file_path = r'.\\files\\2909274-cecilia_phillips-case_file_exhibited_bookmarked-8-10-2022- w notes.pdf'
     #file_path = r'./tests/fakes/fake-pdf.pdf'
-    pdf_reader = PDFReader(file_path)
-    pdf_data = pdf_reader.read()
-    print(pdf_data.pages[0].raw_page)
+    with open(file_path, 'rb') as fp:
+        pdf_reader = PDFReader(fp)
+        pdf_data = pdf_reader.read()
+        print(pdf_data.pages[0].raw_page)
 
 if __name__ == '__main__':
     main()
