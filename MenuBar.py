@@ -29,12 +29,12 @@ class MenuBar(Menu):
         self.add_cascade(label="File", menu=self.filemenu)
 
         self.actions_menu = Menu(self, tearoff=0)
-        self.actions_menu.add_command(label="Scan PDF for Keywords", command=self._run_keyword_scan)
-        self.actions_menu.add_command(label="Scrape Comments from PDF", command=self._run_comment_scrape)
+        self.actions_menu.add_command(label="Scan PDF for Keywords", command=self._run_keyword_scan, state='disabled')
+        self.actions_menu.add_command(label="Scrape Comments from PDF", command=self._run_comment_scrape, state='disabled')
         self.add_cascade(label="Actions", menu=self.actions_menu)
         
         self.settingsmenu = Menu(self, tearoff=0)
-        self.settingsmenu.add_command(label="Keywords", command=self._open_keywords_menu)
+        self.settingsmenu.add_command(label="Keywords", command=self._open_keywords_menu, state='disabled')
         self.settingsmenu.add_command(label="Context Size", command=self._open_context_size_menu)
         self.add_cascade(label="Settings", menu=self.settingsmenu)
         
