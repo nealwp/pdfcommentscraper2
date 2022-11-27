@@ -7,7 +7,7 @@ class CommentViewer(Toplevel):
         super().__init__(parent, padx=15, pady=15)
         self.parent = parent
         self.attributes('-alpha', 0.0)
-        self.title('Work History')
+        self.title('Comments')
 
         self.container = Frame(self)
         self.canvas = Canvas(self.container)
@@ -24,11 +24,13 @@ class CommentViewer(Toplevel):
         self.canvas.create_window((0,0), window=self.scrollable_frame, anchor="nw")
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         
-        for row, comment in enumerate(self.parent.pdf_comments):
-            txtbox = Label(self.scrollable_frame, wraplength=500, justify=LEFT, bg="white", borderwidth=1)
-            txtbox.configure(text=comment['text'])
-            txtbox.pack()
-            #txtbox.configure(state='disabled')
+        for row, exhibit in enumerate(self.parent.medical_record.exhibits):
+            #print(exhibit)
+            for row, comment in enumerate(self.parent.medical_record.exhibits[exhibit].comments):
+                txtbox = Label(self.scrollable_frame, wraplength=500, justify=LEFT, borderwidth=1)
+                txtbox.configure(text=comment.text)
+                txtbox.pack(padx=15, pady=15, anchor='w')
+                #txtbox.configure(state='disabled')
 
         self.container.pack()
         self.canvas.pack(side='left', fill="both", expand=True)
@@ -41,6 +43,20 @@ class CommentViewer(Toplevel):
         self.attributes('-alpha', 1.0)
 
 def main():
+
+    app = Tk()
+    app.medical_record = {
+        'exhibits': {
+            '1A': {
+                'comments': [
+                    {'text': 'something something something'},
+                    {'text': 'another couple words'}
+                ]
+            }
+        }
+    }
+    comment_viewer = CommentViewer(app)
+    app.mainloop()
     return
 
 if __name__ == '__main__':

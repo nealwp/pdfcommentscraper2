@@ -28,8 +28,6 @@ class SummaryForm(Toplevel):
 
         self.comment_count_label = Label(self, text="Comments Found: N/A", width=18)
         self.comment_count_label.grid(column=1, row=0, sticky='w', padx=10, pady=2)
-        #self.view_comments_btn = Button(self, text="View PDF Comments", width=18, state='disabled', command=self._view_comments)
-        #self.view_comments_btn.grid(column=4, row=1, sticky='w', padx=10, pady=2)
 
         self.name_label = Label(self, text="Client Name:")
         self.name_label.grid(column=0, row=1, sticky='w', padx=10, pady=2)
@@ -139,19 +137,6 @@ class SummaryForm(Toplevel):
     def _open_work_history_form(self):
         self.work_history_form = WorkHistoryForm(self)
 
-    def _detect_client_info(self):
-        if not self.pdf_path:
-            self.pdf_path = 'TODO' #get_file_path()
-
-        client_info = "" #scan_for_client_info(self.pdf_path)
-        self.name_entry.insert(0, client_info['Claimant'])
-        self.ssn_entry.insert(0, client_info['SSN'])
-        self.onset_date_entry.insert(0, client_info['Alleged Onset'])
-        self.title_entry.insert(0, client_info['Claim Type'])
-        self.application_date_entry.insert(0, client_info['Application'])
-        self.update()
-        self.deiconify()
-
     def _paint_work_history(self):
         entry: WorkHistoryEntry
         for i, entry in enumerate(self.work_history.entries, start=1):
@@ -160,21 +145,6 @@ class SummaryForm(Toplevel):
             label.grid(column=0, row=i+1, padx=10, pady=2, sticky='w')
         self.update_idletasks()
         self.update()
-
-    def _scan_for_comments(self):
-        if not self.pdf_path:
-            self.pdf_path = get_file_path()
-        
-        self.pdf_comments = 'TODO' #scan_for_comments(self.pdf_path)
-        
-        comment_count = len(self.pdf_comments)
-        self.comment_count_label.configure(text=f'Comments Found: {comment_count}')
-        #self.view_comments_btn.configure(state='normal')
-        #self.view_comments_btn.bind("<Enter>", on_enter)
-        #self.view_comments_btn.bind("<Leave>", on_leave)
-        
-        self.update()
-        self.deiconify()
 
     def _get_summary_data(self):
         if not self.pdf_path:
