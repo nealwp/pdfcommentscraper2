@@ -3,6 +3,7 @@ from datetime import date, datetime
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Dict, List
+from WorkHistory import WorkHistory
 from pdfscanner import PDFData, parse_page_text
 
 
@@ -39,7 +40,7 @@ class Claimant:
     pdof: datetime = None
     claim: str = None
     last_insured_date: datetime = None
-    work_history: list = None # TODO: need own class
+    work_history: WorkHistory = WorkHistory()
     dds_rfc: dict = None #TODO: need own class
     claimed_mdsi: list = None #TODO: need own class
 
@@ -121,7 +122,7 @@ class MedicalRecord:
                 
         self.claimant.birthdate = self.find_client_date_of_birth()
 
-
+        #self.claimant.work_history #TODO: parse work history
         #if len(mr.claimant.work_history) == 0:
         #    mr.claimant.work_history = parse_work_history(page_text)
         #parse_ability_ratings(page_text)
@@ -165,7 +166,13 @@ class MedicalRecord:
                     date = comment['date']
                     text = comment['text']
                     cm = Comment(date=date, text=text, page=index, exhibit_page=exhibit_page)
-                    self.exhibits[exhibit_id].comments.append(cm) 
+                    self.exhibits[exhibit_id].comments.append(cm)
+
+    def comment_count(self):
+        count = 0
+        for exhibit in self.exhibits.keys():
+            count += len(self.exhibits[exhibit].comments)
+        return count 
 
 
 def parse_comment(comment):
