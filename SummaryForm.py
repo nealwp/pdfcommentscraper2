@@ -11,6 +11,7 @@ from docwriter import generate_tablular_medical_summary
 from helpers import get_file_path, on_enter, on_leave, center, get_save_path
 from medrecparser import MedicalRecord
 from pdfscanner import PDFReader
+from ErrorDialog import ErrorDialog
 
 class SummaryForm(Toplevel):
     def __init__(self, parent):
@@ -160,7 +161,7 @@ class SummaryForm(Toplevel):
             self._fill_entry_fields()
             self.update()
         except Exception as e:
-            print('An error occurred')
+            ErrorDialog(self)
         
     def _fill_entry_fields(self):
         mr = self.medical_record
@@ -195,7 +196,7 @@ class SummaryForm(Toplevel):
             self.parent.parent.status_bar._set_status('Data Saved')
             self.destroy()
         except Exception as e:
-            print('An error occurred')
+            ErrorDialog(self)
         return
 
 def main():
