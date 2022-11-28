@@ -147,17 +147,20 @@ class SummaryForm(Toplevel):
         self.update()
 
     def _get_summary_data(self):
-        if not self.pdf_path:
-            self.pdf_path = get_file_path()
-        self.deiconify()
+        try:
+            if not self.pdf_path:
+                self.pdf_path = get_file_path()
+            self.deiconify()
 
-        with open(self.pdf_path, 'rb') as fp:
-            pdf_reader = PDFReader(fp)
-            pdf_data = pdf_reader.read()
-            self.medical_record = MedicalRecord(pdf_data)
+            with open(self.pdf_path, 'rb') as fp:
+                pdf_reader = PDFReader(fp)
+                pdf_data = pdf_reader.read()
+                self.medical_record = MedicalRecord(pdf_data)
 
-        self._fill_entry_fields()
-        self.update()
+            self._fill_entry_fields()
+            self.update()
+        except Exception as e:
+            print('An error occurred')
         
     def _fill_entry_fields(self):
         mr = self.medical_record
@@ -177,20 +180,22 @@ class SummaryForm(Toplevel):
     def _view_comments(self):
         self.comment_viewer = CommentViewer(self)
 
-    def _save_to_file(self):
-        
-        self.summary.work_history = self.work_history
-        self.summary.overview = self.overview_text.get('1.0', 'end-1c')
-        self.summary.exhibits = self.medical_record.exhibits
-        #pages = self.medical_record.pages
-        self.summary.claimant = self.medical_record.claimant
+    def _save_to_file(self):  
+        try:
+            self.summary.work_history = self.work_history
+            self.summary.overview = self.overview_text.get('1.0', 'end-1c')
+            self.summary.exhibits = self.medical_record.exhibits
+            #pages = self.medical_record.pages
+            self.summary.claimant = self.medical_record.claimant
 
-        doc = generate_tablular_medical_summary(self.summary.read())
-        output_path = get_save_path('docx')
-        doc.save(output_path)
+            doc = generate_tablular_medical_summary(self.summary.read())
+            output_path = get_save_path('docx')
+            doc.save(output_path)
 
-        self.parent.parent.status_bar._set_status('Data Saved')
-        self.destroy()
+            self.parent.parent.status_bar._set_status('Data Saved')
+            self.destroy()
+        except Exception as e:
+            print('An error occurred')
         return
 
 def main():
