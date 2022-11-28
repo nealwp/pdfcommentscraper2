@@ -8,18 +8,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python
+      - name: Install and Build
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           cache: 'pip'
       - run: pip install -r requirements.txt
       - run: pyinstaller --name 'disabilitydude' --noconfirm --onedir --windowed --distpath ".\dist" --add-data "./config;config/" "./main.py"
+      
       - uses: actions/upload-artifact@v2
         with:
-          path: dist/*
-          
+          name: disabilitydude
+          path: dist/disabilitydude/*
+
       - name: Create Release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -28,3 +31,13 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
+        
+      - name: upload windows artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: disabilitydude.zip
+          asset_name: disabilitydude.zip
+          asset_content_type: application/zip
