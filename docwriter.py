@@ -4,10 +4,11 @@ from docx.shared import Pt, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_UNDERLINE
 from docx.enum.style import WD_STYLE_TYPE
 from datetime import datetime
+from MedicalSummary import MedicalSummary
 
 from medrecparser import Exhibit
 
-def generate_chronological_medical_summary(data):
+def generate_chronological_medical_summary(summary: MedicalSummary):
     doc = docx.Document()
 
     style = doc.styles['Normal']
@@ -22,26 +23,26 @@ def generate_chronological_medical_summary(data):
     font.bold = True
     font.color.rgb = None 
 
-    doc.add_paragraph(f'CLIENT NAME\t\t\t{data["client_name"]}')
-    doc.add_paragraph(f'CLIENT SSN\t\t\t{data["client_ssn"]}\n')
+    doc.add_paragraph(f'CLIENT NAME\t\t\t{summary.client_name}')
+    doc.add_paragraph(f'CLIENT SSN\t\t\t{summary.client_ssn}\n')
 
-    doc.add_paragraph(f'TITLE\t\t\t\t{data["title"]}')
-    doc.add_paragraph(f'APPLICATION DATE\t\t{data["application_date"]}')
-    doc.add_paragraph(f'ALLEGED ONSET DATE\t\t{data["onset_date"]}')
-    doc.add_paragraph(f'DATE LAST INSURED\t\t{data["insured_date"]}')
-    doc.add_paragraph(f'PRIOR APPLICATIONS?\t\t{data["prior_applications"]}')
-    doc.add_paragraph(f'DOB\t\t\t\t{data["birthdate"]}\n')
+    doc.add_paragraph(f'TITLE\t\t\t\t{summary.title}')
+    doc.add_paragraph(f'APPLICATION DATE\t\t{summary.application_date}')
+    doc.add_paragraph(f'ALLEGED ONSET DATE\t\t{summary.onset_date}')
+    doc.add_paragraph(f'DATE LAST INSURED\t\t{summary.insured_date}')
+    doc.add_paragraph(f'PRIOR APPLICATIONS?\t\t{summary.prior_applications}')
+    doc.add_paragraph(f'DOB\t\t\t\t{summary.birthdate}\n')
 
-    doc.add_paragraph(f'EDUCATION\t\t\t{data["education"]}')
+    doc.add_paragraph(f'EDUCATION\t\t\t{summary.education}')
     doc.add_paragraph("WORK HX")
-    for idx, entry in enumerate(data['work_history'], start=1):
+    for idx, entry in enumerate(summary.work_history, start=1):
         doc.add_paragraph(f'\t{idx}. {entry["job_title"]} : {entry["intensity"]} : {entry["skill_level"]}')
 
     doc.add_paragraph('')
-    doc.add_paragraph(f'DRUG USE\t\t\t{data["drug_use"]}')
-    doc.add_paragraph(f'CRIMINAL HX\t\t\t{data["criminal_history"]}\n')
+    doc.add_paragraph(f'DRUG USE\t\t\t{summary.drug_use}')
+    doc.add_paragraph(f'CRIMINAL HX\t\t\t{summary.criminal_history}\n')
 
-    doc.add_paragraph(f'{data["overview"]}\n')
+    doc.add_paragraph(f'{summary.overview}\n')
     
     for paragraph in doc.paragraphs:
         paragraph.paragraph_format.space_after = Pt(0)
@@ -51,7 +52,7 @@ def generate_chronological_medical_summary(data):
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     para.style = doc.styles['Normal 2']
 
-    for comment in data['comments']:
+    for comment in summary['comments']:
         p = doc.add_paragraph()
         p.add_run(f'{datetime.strftime(comment["date"], "%m/%d/%Y")}: ').bold = True
         p.add_run(f'{comment["text"]}')
@@ -65,7 +66,7 @@ def generate_chronological_medical_summary(data):
 
     return doc
 
-def generate_tablular_medical_summary(data):
+def generate_tablular_medical_summary(summary: MedicalSummary):
     doc = docx.Document()
 
     style = doc.styles['Normal']
@@ -90,19 +91,19 @@ def generate_tablular_medical_summary(data):
     #r.font.size = Pt(24)
     #p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
-    doc.add_paragraph(f'Claimant:\t{data["client_name"]}')
-    doc.add_paragraph(f'SSN:\t\t{data["client_ssn"]}')
-    doc.add_paragraph(f'DOB:\t\t{data["birthdate"]}\t\tAge:\t{data["age"]}\tAge at AOD:\t{data["age_at_onset"]}')
-    doc.add_paragraph(f'EDU:\t\t{data["education"]}')
-    doc.add_paragraph(f'AOD:\t\t{data["onset_date"]}')
-    doc.add_paragraph(f'PDOF:\t\t{datetime.strftime(data["claimant"].pdof, "%m/%d/%Y")}')
-    doc.add_paragraph(f'Claim:\t\t{data["claimant"].claim}')
-    doc.add_paragraph(f'DLI:\t\t{data["insured_date"]}\n\n')
+    doc.add_paragraph(f'Claimant:\t{summary.client_name}')
+    doc.add_paragraph(f'SSN:\t\t{summary.client_ssn}')
+    doc.add_paragraph(f'DOB:\t\t{summary.birthdate}\t\tAge:\t{summary.age}\tAge at AOD:\t{summary.age_at_onset}')
+    doc.add_paragraph(f'EDU:\t\t{summary.education}')
+    doc.add_paragraph(f'AOD:\t\t{summary.onset_date}')
+    doc.add_paragraph(f'PDOF:\t\t{datetime.strftime(summary.claimant.pdof, "%m/%d/%Y")}')
+    doc.add_paragraph(f'Claim:\t\t{summary.claimant.claim}')
+    doc.add_paragraph(f'DLI:\t\t{summary.insured_date}\n\n')
     
     p = doc.add_paragraph()
     p.add_run("PAST WORK:").bold = True
-    for idx, entry in enumerate(data['work_history'], start=1):
-        doc.add_paragraph(f'\t{idx}. {entry["job_title"]} : {entry["intensity"]} : {entry["skill_level"]}')
+    for idx, entry in enumerate(summary.work_history.entries, start=1):
+        doc.add_paragraph(f'\t{idx}. {entry.job_title} : {entry.intensity} : {entry.skill_level}')
 
     doc.add_paragraph('')
     p = doc.add_paragraph()
@@ -121,7 +122,7 @@ def generate_tablular_medical_summary(data):
     doc.add_paragraph('')
     p = doc.add_paragraph()
     p.add_run('CLAIMED MDSI PER APPLICATION:').bold = True
-    doc.add_paragraph(f'{data["overview"]}\n')
+    doc.add_paragraph(f'{summary.overview}\n')
     
     for paragraph in doc.paragraphs:
         paragraph.paragraph_format.space_after = Pt(0)
@@ -131,17 +132,17 @@ def generate_tablular_medical_summary(data):
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     para.style = doc.styles['Normal 2']
 
-    for exhibit in data['exhibits'].keys():
+    for exhibit in summary.exhibits.keys():
         
         if 'F' in exhibit:
-            ex = data['exhibits'][exhibit]
+            ex = summary.exhibits[exhibit]
             p = doc.add_paragraph()
             p.add_run(f'{exhibit}: {ex.provider_name}; {ex.from_date}-{ex.to_date}').bold = True
-            if len(data['exhibits'][exhibit].comments) == 0:
+            if len(summary.exhibits[exhibit].comments) == 0:
                 p = doc.add_paragraph()
                 p.add_run('Not helpful')
                 continue
-            for comment in data['exhibits'][exhibit].comments:
+            for comment in summary.exhibits[exhibit].comments:
                 p = doc.add_paragraph()
                 p.add_run(f'{comment.date}: {comment.text} ({exhibit}/{comment.exhibit_page})')
 

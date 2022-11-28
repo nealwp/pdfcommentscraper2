@@ -4,7 +4,7 @@ from tkinter.ttk import Combobox
 from datetime import date, datetime
 
 from CommentsForm import CommentViewer
-from MedicalSummary import MedicalSummary
+from MedicalSummary import MedicalSummary, SummaryInterface
 from WorkHistoryForm import WorkHistoryForm
 from WorkHistory import WorkHistory, WorkHistoryEntry
 from docwriter import generate_tablular_medical_summary
@@ -16,7 +16,7 @@ class SummaryForm(Toplevel):
     def __init__(self, parent):
         super().__init__(parent, padx=15, pady=15)
         self.parent = parent
-        self.summary = MedicalSummary()
+        self.summary = SummaryInterface()
         self.work_history = WorkHistory()
         self.pdf_comments = []
         self.medical_record = None
@@ -185,7 +185,7 @@ class SummaryForm(Toplevel):
         #pages = self.medical_record.pages
         self.summary.claimant = self.medical_record.claimant
 
-        doc = generate_tablular_medical_summary(self.summary)
+        doc = generate_tablular_medical_summary(self.summary.read())
         output_path = get_save_path('docx')
         doc.save(output_path)
 

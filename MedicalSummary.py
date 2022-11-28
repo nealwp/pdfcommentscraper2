@@ -1,8 +1,10 @@
 from datetime import date, datetime
 from tkinter import StringVar
+from WorkHistory import WorkHistory
 
+from medrecparser import Claimant
 
-class MedicalSummary:
+class SummaryInterface:
     def __init__(self) -> None:
         self.client_name = StringVar()
         self.client_ssn = StringVar()
@@ -13,14 +15,38 @@ class MedicalSummary:
         self.prior_applications = StringVar()
         self.birthdate = StringVar()
         self.education = StringVar()
-        self.work_history = None
-        self.drug_use = StringVar()
         self.criminal_history = StringVar()
-        self.overview = StringVar()
-        self.claimant = None
+        self.drug_use = StringVar()
+
+        self.overview: str = ''
+        self.work_history: WorkHistory = None
+        self.claimant: Claimant = None
         self.exhibits = None
         self.claimant = None
-        #self.pages = None
+
+    def read(self):
+        return MedicalSummary(self)
+
+
+class MedicalSummary:
+    def __init__(self, intfc: SummaryInterface) -> None:
+        self.client_name = intfc.client_name.get()
+        self.client_ssn = intfc.client_ssn.get()
+        self.title = intfc.title.get()
+        self.application_date = intfc.application_date.get()
+        self.onset_date = intfc.onset_date.get()
+        self.insured_date = intfc.insured_date.get()
+        self.prior_applications = intfc.prior_applications.get()
+        self.birthdate = intfc.birthdate.get()
+        self.education = intfc.education.get()
+        self.criminal_history = intfc.criminal_history.get()
+        self.drug_use = intfc.drug_use.get()
+
+        self.overview = intfc.overview
+        self.work_history: WorkHistory = intfc.work_history
+        self.claimant: Claimant = intfc.claimant
+        self.exhibits = intfc.exhibits
+        self.claimant = intfc.claimant
 
     @property
     def age(self):
