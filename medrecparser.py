@@ -60,18 +60,6 @@ class Claimant:
             return onset_date.year - birthdate.year - ((onset_date.month, onset_date.day) < (birthdate.month, birthdate.day))
         else: 
             return None
-@dataclass
-class MedicalRecord2:
-    '''a social security pdf medical record'''
-    claimant: Claimant
-    exhibits: dict
-    pages: dict
-
-    def comment_count(self):
-        count = 0
-        for exhibit in self.exhibits.keys():
-            count += len(self.exhibits[exhibit].comments)
-        return count
 
 class MedicalRecord:
     
