@@ -7,10 +7,10 @@ from pathlib import Path
 
 import random
 
-from ui.summary import SummaryForm
-from ui.contextsettings import ContextSizeForm
-from ui.keywordsettings import KeywordSettingsForm
-from ui.helpers import get_file_path, get_save_path
+from view.summary import SummaryForm
+from view.contextsettings import ContextSizeForm
+from view.keywordsettings import KeywordSettingsForm
+from view.helpers import get_file_path, get_save_path
 from datetime import datetime
 
 from configparser import ConfigParser

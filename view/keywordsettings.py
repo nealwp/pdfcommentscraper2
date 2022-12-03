@@ -1,6 +1,6 @@
 from tkinter import Tk, END, Listbox, Scrollbar, Button, Label, Entry, Toplevel, Frame
-from ui.helpers import on_enter, on_leave, center
-from controllers.appconfig import AppConfig
+from view.helpers import on_enter, on_leave, center
+from controller.appconfig import AppConfig
 
 config = AppConfig()
 

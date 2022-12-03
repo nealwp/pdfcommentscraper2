@@ -8,7 +8,7 @@ import sys
 from pdf2image import convert_from_path
 import os
 from time import perf_counter
-from ui.helpers import strip_non_printable_chars
+from view.helpers import strip_non_printable_chars
 import json
   
 # Path of the pdf

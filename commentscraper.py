@@ -9,7 +9,7 @@ from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import asksaveasfilename
 from tkinter import messagebox
 
-from ui.helpers import write_csv, get_file_path, get_save_path
+from view.helpers import write_csv, get_file_path, get_save_path
 
 class ErrorLog:
     """ Error log object """

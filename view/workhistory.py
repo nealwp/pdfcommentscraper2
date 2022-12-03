@@ -1,9 +1,9 @@
 from tkinter import Tk, StringVar, Button, Label, Entry, Toplevel, END
 from tkinter.ttk import Combobox
 
-from components.workhistory import WorkHistory, WorkHistoryEntry
+from model.workhistory import WorkHistory, WorkHistoryEntry
 
-import ui.helpers as helpers
+import view.helpers as helpers
 
 class WorkHistoryForm(Toplevel):
     def __init__(self, parent):

@@ -1,8 +1,8 @@
 import re
 from tkinter import Tk, BOTTOM, X
 
-from ui.statusbar import StatusBar
-from ui.menubar import MenuBar
+from view.statusbar import StatusBar
+from view.menubar import MenuBar
 
 class App(Tk):
     def __init__(self, *args, **kwargs) -> None:

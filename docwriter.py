@@ -4,7 +4,7 @@ from docx.shared import Pt, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_UNDERLINE
 from docx.enum.style import WD_STYLE_TYPE
 from datetime import datetime
-from MedicalSummary import MedicalSummary
+from model.summary import MedicalSummary
 
 from medrecparser import Exhibit
 

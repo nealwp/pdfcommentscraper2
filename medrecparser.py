@@ -3,7 +3,7 @@ from datetime import date, datetime
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Dict, List
-from components.workhistory import WorkHistory
+from model.workhistory import WorkHistory
 from pdfscanner import PDFData, parse_page_text
 
 
