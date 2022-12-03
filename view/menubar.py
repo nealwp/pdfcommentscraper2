@@ -1,4 +1,4 @@
-from tkinter import Menu, messagebox
+from tkinter import Tk, Menu, messagebox
 from time import perf_counter
 from csv import writer, DictWriter
 import subprocess
@@ -7,10 +7,10 @@ from pathlib import Path
 
 import random
 
-from view.summary import SummaryForm
-from view.contextsettings import ContextSizeForm
-from view.keywordsettings import KeywordSettingsForm
-from view.helpers import get_file_path, get_save_path
+from summary import SummaryForm
+from contextsettings import ContextSizeForm
+from keywordsettings import KeywordSettingsForm
+from shared.helpers import get_file_path, get_save_path
 from datetime import datetime
 
 from configparser import ConfigParser
@@ -125,3 +125,14 @@ def get_app_release():
     config.read(config_path)
     release = datetime.strptime(config['Application']['release'], '%Y-%m-%dT%H:%M:%S')
     return release
+
+
+def main():
+
+    app = Tk()
+    menubar = MenuBar(app)
+    app.mainloop()
+    return
+
+if __name__ == '__main__':
+    main()

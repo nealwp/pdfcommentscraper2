@@ -2,8 +2,6 @@ from datetime import date, datetime
 from tkinter import StringVar
 from model.workhistory import WorkHistory
 
-from medrecparser import Claimant
-
 class SummaryInterface:
     def __init__(self) -> None:
         self.client_name = StringVar()
@@ -20,7 +18,7 @@ class SummaryInterface:
 
         self.overview: str = ''
         self.work_history: WorkHistory = None
-        self.claimant: Claimant = None
+        self.claimant: None
         self.exhibits = None
         self.claimant = None
 
@@ -44,7 +42,7 @@ class MedicalSummary:
 
         self.overview = intfc.overview
         self.work_history: WorkHistory = intfc.work_history
-        self.claimant: Claimant = intfc.claimant
+        self.claimant: intfc.claimant
         self.exhibits = intfc.exhibits
         self.claimant = intfc.claimant
 

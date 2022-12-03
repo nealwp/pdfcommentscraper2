@@ -1,9 +1,7 @@
 from tkinter import Tk, LEFT, Canvas, Scrollbar, Button, Label, Toplevel, Frame
 
-from .helpers import center
-
 class CommentViewer(Toplevel):
-    def __init__(self, parent):
+    def __init__(self, parent, comments):
         super().__init__(parent, padx=15, pady=15)
         self.parent = parent
         self.attributes('-alpha', 0.0)
@@ -24,13 +22,11 @@ class CommentViewer(Toplevel):
         self.canvas.create_window((0,0), window=self.scrollable_frame, anchor="nw")
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         
-        for row, exhibit in enumerate(self.parent.medical_record.exhibits):
-            #print(exhibit)
-            for row, comment in enumerate(self.parent.medical_record.exhibits[exhibit].comments):
-                txtbox = Label(self.scrollable_frame, wraplength=500, justify=LEFT, borderwidth=1)
-                txtbox.configure(text=comment.text)
-                txtbox.pack(padx=15, pady=15, anchor='w')
-                #txtbox.configure(state='disabled')
+        for row, comment in enumerate(comments):
+            txtbox = Label(self.scrollable_frame, wraplength=350, justify=LEFT, borderwidth=1)
+            txtbox.configure(text=comment)
+            txtbox.pack(padx=15, pady=15, anchor='w')
+            #txtbox.configure(state='disabled')
 
         self.container.pack()
         self.canvas.pack(side='left', fill="both", expand=True)
@@ -42,20 +38,35 @@ class CommentViewer(Toplevel):
         center(self)
         self.attributes('-alpha', 1.0)
 
+def center(win):
+    """
+    centers a tkinter window
+    :param win: the main window or Toplevel window to center
+    """
+    win.update_idletasks()
+    width = win.winfo_width()
+    frm_width = win.winfo_rootx() - win.winfo_x()
+    win_width = width + 2 * frm_width
+    height = win.winfo_height()
+    titlebar_height = win.winfo_rooty() - win.winfo_y()
+    win_height = height + titlebar_height + frm_width
+    x = win.winfo_screenwidth() // 2 - win_width // 2
+    y = win.winfo_screenheight() // 2 - win_height // 2
+    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+    win.deiconify()
+
 def main():
 
     app = Tk()
-    app.medical_record = {
-        'exhibits': {
-            '1A': {
-                'comments': [
-                    {'text': 'something something something'},
-                    {'text': 'another couple words'}
-                ]
-            }
-        }
-    }
-    comment_viewer = CommentViewer(app)
+    comments = [
+        "this is a comment",
+        "this is another comment",
+        "this is a third comment",
+        "this is a really long comment with lots of things to say, could potentially be as long as \
+        a whole paragraph, longest thing you've ever seen. Maybe longer than that. Who knows? \
+        Not me, I'm not much of comment measurer myself."
+        ]
+    comment_viewer = CommentViewer(app, comments)
     app.mainloop()
     return
 
