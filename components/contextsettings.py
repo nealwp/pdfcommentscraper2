@@ -1,6 +1,6 @@
 from tkinter import Tk, Button, Label, Entry, Toplevel
 import helpers
-from AppConfig import AppConfig
+from controllers.appconfig import AppConfig
 
 config = AppConfig()
 
