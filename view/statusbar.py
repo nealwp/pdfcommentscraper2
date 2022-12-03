@@ -1,4 +1,4 @@
-from tkinter import Label, Frame, SUNKEN, E, W
+from tkinter import BOTTOM, X, Tk, Label, Frame, SUNKEN, E, W
 
 class StatusBar(Frame):
     
@@ -11,16 +11,27 @@ class StatusBar(Frame):
         
         self.version = Label(self, text='error', anchor=E, padx=5)
         self.version.grid(column=1, row=0, sticky="e", columnspan=1)
-        self._get_app_version()
+        self.get_app_version()
 
         self.columnconfigure(0, weight=1)
 
-    def _set_status(self, message):
+    def set_status(self, message):
         self.status.configure(text=message)
 
-    def _reset_status(self):
+    def reset_status(self):
         self.status.configure(text='Ready')
     
-    def _get_app_version(self):
+    def get_app_version(self):
         version = 'Fix this later' # TODO: get_app_version() 
         self.version.config(text=f"v{version}")
+
+
+def main():
+    app = Tk()
+    app.status_bar = StatusBar(app)
+    app.status_bar.pack(side=BOTTOM, fill=X)
+    app.mainloop()
+    return
+
+if __name__ == '__main__':
+    main()
