@@ -1,8 +1,8 @@
 import re
 from tkinter import Tk, BOTTOM, X
 
-from StatusBar import StatusBar
-from MenuBar import MenuBar
+from components.statusbar import StatusBar
+from components.menubar import MenuBar
 from helpers import center
 
 class App(Tk):
