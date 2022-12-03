@@ -5,7 +5,7 @@ from datetime import date, datetime
 
 from components.commentviewer import CommentViewer
 from MedicalSummary import MedicalSummary, SummaryInterface
-from WorkHistoryForm import WorkHistoryForm
+from components.workhistory import WorkHistoryForm
 from WorkHistory import WorkHistory, WorkHistoryEntry
 from docwriter import generate_tablular_medical_summary
 from helpers import get_file_path, on_enter, on_leave, center, get_save_path
