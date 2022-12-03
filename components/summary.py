@@ -3,7 +3,7 @@ from tkinter.ttk import Combobox
 
 from datetime import date, datetime
 
-from CommentsForm import CommentViewer
+from components.commentviewer import CommentViewer
 from MedicalSummary import MedicalSummary, SummaryInterface
 from WorkHistoryForm import WorkHistoryForm
 from WorkHistory import WorkHistory, WorkHistoryEntry
@@ -11,7 +11,7 @@ from docwriter import generate_tablular_medical_summary
 from helpers import get_file_path, on_enter, on_leave, center, get_save_path
 from medrecparser import MedicalRecord
 from pdfscanner import PDFReader
-from ErrorDialog import ErrorDialog
+from components.dialog import ErrorDialog
 
 class SummaryForm(Toplevel):
     def __init__(self, parent):
