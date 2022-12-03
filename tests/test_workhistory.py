@@ -1,6 +1,6 @@
 import pytest
 
-from WorkHistory import WorkHistory, WorkHistoryEntry
+from components.workhistory import WorkHistory, WorkHistoryEntry
 
 def test_new_work_history_should_be_empty():
     work_history = WorkHistory()

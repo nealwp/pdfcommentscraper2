@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from tkinter import StringVar
-from WorkHistory import WorkHistory
+from components.workhistory import WorkHistory
 
 from medrecparser import Claimant
 

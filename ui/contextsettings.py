@@ -1,5 +1,5 @@
 from tkinter import Tk, Button, Label, Entry, Toplevel
-import helpers
+from .helpers import on_enter, on_leave, center
 from controllers.appconfig import AppConfig
 
 config = AppConfig()
@@ -23,12 +23,12 @@ class ContextSizeForm(Toplevel):
         self.words_plus_entry.grid(column=1, row=1, sticky='e', padx=10, pady=3)
 
         done_btn = Button(self, text='Apply', command=self.save_context_settings)
-        done_btn.bind("<Enter>", helpers.on_enter)
-        done_btn.bind("<Leave>", helpers.on_leave)
+        done_btn.bind("<Enter>", on_enter)
+        done_btn.bind("<Leave>", on_leave)
         done_btn.grid(column=0, row=3, columnspan=2, pady=3)
         
         self.get_context_settings()
-        helpers.center(self)
+        center(self)
         self.attributes('-alpha', 1.0)
 
     def get_context_settings(self):

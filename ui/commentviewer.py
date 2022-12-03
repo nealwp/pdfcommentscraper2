@@ -1,6 +1,6 @@
 from tkinter import Tk, LEFT, Canvas, Scrollbar, Button, Label, Toplevel, Frame
 
-from helpers import center
+from .helpers import center
 
 class CommentViewer(Toplevel):
     def __init__(self, parent):
