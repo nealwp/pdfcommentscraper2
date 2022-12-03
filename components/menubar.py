@@ -8,8 +8,8 @@ from pathlib import Path
 import random
 
 from SummaryForm import SummaryForm
-from ContextSettingsForm import ContextSizeForm
-from KeywordSettingsForm import KeywordSettingsForm
+from components.contextsettings import ContextSizeForm
+from components.keywordsettings import KeywordSettingsForm
 from helpers import get_file_path, get_save_path
 from datetime import datetime
 
