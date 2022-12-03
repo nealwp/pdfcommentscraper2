@@ -7,9 +7,9 @@ from pathlib import Path
 
 import random
 
-from components.summary import SummaryForm
-from components.contextsettings import ContextSizeForm
-from components.keywordsettings import KeywordSettingsForm
+from ui.summary import SummaryForm
+from ui.contextsettings import ContextSizeForm
+from ui.keywordsettings import KeywordSettingsForm
 from helpers import get_file_path, get_save_path
 from datetime import datetime
 
