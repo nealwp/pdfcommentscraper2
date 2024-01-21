@@ -1,11 +1,13 @@
 from tkinter import Menu
 from csv import DictWriter
-from helpers import get_file_path, get_save_path
-from modules.pdfscanner import scan_for_keywords, scan_for_comments
 from time import perf_counter
-from ui.summaryform import SummaryForm
-from ui.keywordsettingsform import KeywordSettingsForm
-from ui.contextsizeform import ContextSizeForm
+
+from src.helpers import get_file_path, get_save_path
+from src.pdf.scanner import scan_for_comments
+from src.modules.pdfscanner import scan_for_keywords
+from src.ui.summaryform import SummaryForm
+from src.ui.keywordsettingsform import KeywordSettingsForm
+from src.ui.contextsizeform import ContextSizeForm
 
 
 class MenuBar(Menu):
@@ -51,7 +53,6 @@ class MenuBar(Menu):
         print(f"Completed in {fin - debut:0.4f}s")
 
     def _run_comment_scrape(self):
-        # run_commentscraper()
         pdf_path = get_file_path()
         comments = scan_for_comments(pdf_path)
         if len(comments) > 0:

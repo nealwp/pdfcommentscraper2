@@ -1,10 +1,11 @@
-import datetime
+from datetime import datetime
 from tkinter import Toplevel, Button, Label, Entry, StringVar, Text, LabelFrame
 from tkinter.ttk import Combobox
-from helpers import get_save_path, get_file_path, get_age, get_age_at_onset
-from modules.docwriter import generate_tablular_medical_summary_v2
-from modules.pdfscanner import scan_for_comments, scan_pdf_for_summary
-from ui.workhistoryform import WorkHistoryForm
+
+from src.helpers import get_save_path, get_file_path, get_age, get_age_at_onset
+from src.pdf.scanner import scan_for_comments, scan_pdf_for_summary
+from src.ui.workhistoryform import WorkHistoryForm
+from src.docgen.default_summary import generate_tablular_medical_summary_v2
 
 
 class SummaryForm(Toplevel):
@@ -157,9 +158,16 @@ class SummaryForm(Toplevel):
         if not self.pdf_path:
             self.pdf_path = get_file_path()
         self.deiconify()
+        modal = Toplevel(self)
+        modal.title("Scanning")
+        Label(modal, text="Scanning, please wait...").pack(pady=20)
+        modal.transient(self)
+        modal.grab_set()
+        modal.geometry("+%d+%d" % (self.winfo_rootx()+50, self.winfo_rooty()+50))
+        self.update()
         self.medical_record = scan_pdf_for_summary(self.pdf_path)
         self._fill_entry_fields()
-        self.update()
+        modal.destroy()
 
     def _fill_entry_fields(self):
         mr = self.medical_record
@@ -241,6 +249,6 @@ class SummaryForm(Toplevel):
         output_path = get_save_path('docx')
         doc.save(output_path)
 
-        self.parent.parent.status_bar._set_status('Data Saved')
+        self.parent.parent.set_status(f'Summary saved to: {output_path}')
         self.destroy()
         return
