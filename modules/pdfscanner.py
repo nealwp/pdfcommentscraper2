@@ -461,5 +461,6 @@ def main():
     file_path = r'.\\files\\2909274-cecilia_phillips-case_file_exhibited_bookmarked-8-10-2022- w notes.pdf'
     scan_pdf_for_summary(file_path)
 
+
 if __name__ == '__main__':
     main()
