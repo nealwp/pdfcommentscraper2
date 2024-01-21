@@ -5,7 +5,7 @@ from tkinter.ttk import Combobox
 from src.helpers import get_save_path, get_file_path, get_age, get_age_at_onset
 from src.pdf.scanner import scan_for_comments, scan_pdf_for_summary
 from src.ui.workhistoryform import WorkHistoryForm
-from src.docgen.default_summary import generate_tablular_medical_summary_v2
+from src.exporter.default_summary import generate_tablular_medical_summary_v2
 
 
 class SummaryForm(Toplevel):
