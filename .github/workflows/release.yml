@@ -1,9 +1,12 @@
-name: Build
+name: Build and Attach Artifacts to Release
 
-on: [push]
+on:
+  release:
+    types: [created]
 
 jobs:
-  build:
+
+  build-release-artifacts:
     runs-on: windows-latest
 
     steps:
@@ -23,5 +26,16 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: disabilitydude
+          name: disabilitydude.zip
           path: dist/*
+          retention-days: 5
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }} 
+          asset_path: ./dist/disabilitydude.zip 
+          asset_name: disabilitydude.zip  
+          asset_content_type: application/zip
