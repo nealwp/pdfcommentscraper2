@@ -18,7 +18,7 @@ jobs:
 
       - name: Build Executable   
         run: |
-          pyinstaller  --name 'disabilitydude' --noconfirm --onedir --windowed --paths=src  --distpath ".\dist" --add-data "./config;config/" "./src/main.py"
+          pyinstaller --paths=. --name 'disabilitydude' --noconfirm --onedir --windowed --distpath ".\dist" --add-data "./config;config/" "./src/main.py"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
