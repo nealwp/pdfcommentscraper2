@@ -23,12 +23,10 @@ jobs:
         run: |
           pyinstaller --paths=. --name 'disabilitydude' --noconfirm --onedir --windowed --distpath ".\dist" --add-data "./config;config/" "./src/main.py"
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: disabilitydude
-          path: dist/*
-          retention-days: 5
+      - name: Package Artifact
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          Compress-Archive -Path .\dist\disabilitydude -Destination ".\disabilitydude.zip" -Force
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -36,6 +34,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }} 
-          asset_path: ./disabilitydude
-          asset_name: disabilitydude
+          asset_path: ./disabilitydude.zip
+          asset_name: disabilitydude.zip
           asset_content_type: application/zip
