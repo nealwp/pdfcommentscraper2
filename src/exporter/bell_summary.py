@@ -3,7 +3,7 @@ from docx.shared import Pt, Inches
 from datetime import datetime
 
 
-def generate_tablular_medical_summary_v2(data):
+def generate_bell_format_summary(data):
 
     doc = docx.Document()
 
@@ -21,10 +21,12 @@ def generate_tablular_medical_summary_v2(data):
     doc.add_paragraph(f'DOB:\t\t\t\t{data["birthdate"]}')
     doc.add_paragraph(f'AGE:\t\t\t\t{data["age"]}')
     doc.add_paragraph(f'EDUCATION:\t\t\t{data["education"]}')
-    doc.add_paragraph(f'PAST WORK:\t\t\t{data["work_history"][0]["job_title"]}')
-    doc.add_paragraph(f'\t\t\t\t{data["work_history"][1]["job_title"]}')
-    doc.add_paragraph(f'\t\t\t\t{data["work_history"][2]["job_title"]}')
-    doc.add_paragraph(f'\t\t\t\t{data["work_history"][3]["job_title"]}')
+    if len(data["work_history"]) == 0:
+        doc.add_paragraph('PAST WORK:\t\t\t')
+    else:
+        doc.add_paragraph(f'PAST WORK:\t\t\t{data["work_history"][0]["job_title"]}')
+        for job in data["work_history"][1:]:
+            doc.add_paragraph(f'\t\t\t\t{job["job_title"]}')
 
     doc.add_paragraph('')
     doc.add_paragraph('')
@@ -40,7 +42,7 @@ def generate_tablular_medical_summary_v2(data):
     doc.add_paragraph('')
     doc.add_paragraph('')
 
-    doc.add_paragraph('SUPPORING EXHIBITS WITH TEST RESULTS:')
+    doc.add_paragraph('SUPPORTING EXHIBITS WITH TEST RESULTS:')
 
     doc.add_paragraph('')
     doc.add_paragraph('')
@@ -53,8 +55,9 @@ def generate_tablular_medical_summary_v2(data):
 
         if 'F' in exhibit:
             ex = data['exhibits'][exhibit]
+
             p = doc.add_paragraph()
-            p.add_run(f'{exhibit}: {ex.provider_name}; {ex.from_date}-{ex.to_date}').bold = True
+            p.add_run(f'{exhibit}: {ex.provider_handle()}; {ex.from_date}-{ex.to_date}').bold = True
             if len(data['exhibits'][exhibit].comments) == 0:
                 p = doc.add_paragraph()
                 p.add_run('Not helpful')

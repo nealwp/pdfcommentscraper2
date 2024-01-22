@@ -1,11 +1,11 @@
 from datetime import datetime
-from tkinter import Toplevel, Button, Label, Entry, StringVar, Text, LabelFrame
+from tkinter import Toplevel, Button, Label, Entry, StringVar, Text, LabelFrame, Radiobutton
 from tkinter.ttk import Combobox
 
 from src.helpers import get_save_path, get_file_path, get_age, get_age_at_onset
 from src.pdf.scanner import scan_for_comments, scan_pdf_for_summary
 from src.ui.workhistoryform import WorkHistoryForm
-from src.exporter.default_summary import generate_tablular_medical_summary_v2
+from src.exporter import generate_summary
 
 
 class SummaryForm(Toplevel):
@@ -23,7 +23,7 @@ class SummaryForm(Toplevel):
         self.detect_client_btn.grid(column=0, row=0, sticky='w', padx=10, pady=2)
 
         self.comment_count_label = Label(self, text="Comments Found: N/A", width=18)
-        self.comment_count_label.grid(column=1, row=0, sticky='w', padx=10, pady=2)
+        self.comment_count_label.grid(column=1, row=0, sticky='e', padx=10, pady=2)
 
         self.name_label = Label(self, text="Client Name:")
         self.name_label.grid(column=0, row=1, sticky='w', padx=10, pady=2)
@@ -111,6 +111,20 @@ class SummaryForm(Toplevel):
 
         self.work_history_frame = LabelFrame(self, text="Work History")
         self.work_history_frame.grid(column=2, row=1, columnspan=2, rowspan=12, sticky='n', pady=10)
+
+        self.selected_format = StringVar()
+        options = [
+            "Bell",
+            "Tabular",
+            "Chronological",
+        ]
+
+        self.export_format_frame = LabelFrame(self, text="Summary Format")
+        self.export_format_frame.grid(column=0, row=16, columnspan=2, rowspan=len(options), sticky='w', pady=10, padx=10)
+        for format in options:
+            Radiobutton(self.export_format_frame, text=format, variable=self.selected_format, value=format).pack(anchor='w')
+
+        self.selected_format.set("Bell")
 
         cancel_btn = Button(self, text='Cancel', width=20, command=self.destroy)
         cancel_btn.grid(column=0, row=99, columnspan=2, padx=10, pady=4)
@@ -200,19 +214,21 @@ class SummaryForm(Toplevel):
         drug_use = self.drugs_txtVar.get()
         criminal_history = self.criminal_txtVar.get()
         overview = self.overview_text.get('1.0', 'end-1c')
-        exhibits = self.medical_record.exhibits
-        pages = self.medical_record.pages
-
-        claimant = self.medical_record.claimant
+        impairments = []
 
         if self.medical_record:
             age = self.medical_record.claimant.age()
-        else:
-            age = get_age(birthdate)
-
-        if self.medical_record:
+            exhibits = self.medical_record.exhibits
+            pages = self.medical_record.pages
+            claimant = self.medical_record.claimant
+            comments = self.medical_record.comments()
             age_at_onset = self.medical_record.claimant.age_at_onset()
         else:
+            exhibits = {}
+            pages = {}
+            claimant = {}
+            comments = []
+            age = get_age(birthdate)
             age_at_onset = get_age_at_onset(birthdate, onset_date)
 
         data = {
@@ -234,21 +250,17 @@ class SummaryForm(Toplevel):
             'claimant': claimant,
             'exhibits': exhibits,
             'pages': pages,
-            'impairments': [
-                "Schizoaffective disorder",
-                "Deep vein thrombosis",
-                "Status/post lumbar fusion",
-                "Osteoarthritis of left knee",
-                "Cervical spondylosis",
-                "Obesity",
-            ]
+            'impairments': impairments,
+            'comments': comments,
         }
 
-        # allow to choose generation template?
-        doc = generate_tablular_medical_summary_v2(data)
-        output_path = get_save_path('docx')
-        doc.save(output_path)
+        try:
+            doc = generate_summary(self.selected_format.get(), data)
+            output_path = get_save_path('docx')
+            doc.save(output_path)
+            self.parent.parent.set_status(f'Summary saved to: {output_path}')
+        except Exception as e:
+            self.parent.parent.set_status(f'Error: {e}')
 
-        self.parent.parent.set_status(f'Summary saved to: {output_path}')
         self.destroy()
         return

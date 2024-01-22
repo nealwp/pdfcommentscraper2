@@ -48,6 +48,13 @@ class MedicalRecord:
             count += len(self.exhibits[exhibit].comments)
         return count
 
+    def comments(self):
+        comments = []
+        for exhibit in self.exhibits.keys():
+            for c in self.exhibits[exhibit].comments:
+                comments.append(c)
+        return comments
+
 
 @dataclass
 class Comment:
@@ -65,6 +72,9 @@ class Exhibit:
     from_date: str
     to_date: str
     comments: list
+
+    def provider_handle(self):
+        return ' '.join(self.provider_name.split(' - ')[1].split(' ')[1:]).title()
 
 
 @dataclass
