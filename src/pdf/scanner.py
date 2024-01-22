@@ -157,34 +157,68 @@ def parse_work_history(page_text):
 
 
 def get_exhibits_from_pdf(doc):
-    try:
-        outlines = doc.get_outlines()
-        sys.setrecursionlimit(999999999)
-        index = 1
-        provider = ''
-        exhibits = {}
-        for (level, title, dest, a, se) in outlines:
-            if level == 2:
-                provider = title
-                id = provider.split(":")[0]
-                provider_name = provider.split(":")[1].replace("Doc. Dt.", "").replace("Tmt. Dt.", "").strip()
-                provider_dates = re.sub(r"\(\d* page.*", "", provider.split(":")[2]).strip()
-                from_date = provider_dates.split("-")[0]
-                try:
-                    to_date = provider_dates.split("-")[1]
-                except IndexError:
-                    to_date = from_date
-                ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
-                exhibits[id] = ex
-            if level == 3:
-                index += 1
-    except PDFNoOutlines:
-        exhibits = {}
-        sys.setrecursionlimit(1000)
-        print('PDF has no outlines to reference.')
+    exhibits = {}
+    outlines = doc.get_outlines()
+    sys.setrecursionlimit(999999999)
+    index = 1
+    provider = ''
+    for (level, title, dest, a, se) in outlines:
+        if level == 2:
+            provider = title
+            id = provider.split(":")[0]
+            provider_name = provider.split(":")[1].replace("Doc. Dt.", "").replace("Tmt. Dt.", "").strip()
+            provider_dates = re.sub(r"\(\d* page.*", "", provider.split(":")[2]).strip()
+            from_date = provider_dates.split("-")[0]
+            try:
+                to_date = provider_dates.split("-")[1]
+            except IndexError:
+                to_date = from_date
+            ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
+            exhibits[id] = ex
+        if level == 3:
+            index += 1
+    exhibits = {}
 
     sys.setrecursionlimit(1000)
     return exhibits
+
+
+def parse_title(title):
+    split_title = title.split(":")
+    id = split_title[0]
+    provider_name = split_title[1].replace("Doc. Dt.", "").replace("Tmt. Dt.", "").strip()
+
+    # if no dates, return empty
+    if len(split_title) == 2:
+        provider_name = re.sub(r"\(\d* page.*", "", provider_name).strip()
+        return {
+            "id": id,
+            "provider_name": provider_name,
+            "from_date": "",
+            "to_date": ""
+        }
+
+    provider_dates = re.sub(r"\(\d* page.*", "", split_title[2]).strip().split("-")
+
+    # if one date, return both as date
+    if len(provider_dates) == 1:
+        date = provider_dates[0]
+        return {
+            "id": id,
+            "provider_name": provider_name,
+            "from_date": date,
+            "to_date": date
+        }
+
+    from_date = provider_dates[0]
+    to_date = provider_dates[1]
+
+    return {
+        "id": id,
+        "provider_name": provider_name,
+        "from_date": from_date,
+        "to_date": to_date
+    }
 
 
 def parse_page_comments(annots):
