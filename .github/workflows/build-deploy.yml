@@ -19,3 +19,16 @@ jobs:
       - name: Build Executable   
         run: |
           pyinstaller  --name 'disabilitydude' --noconfirm --onedir --windowed  --distpath ".\dist" --add-data "./config;config/" "./src/main.py"
+
+      - name: Zip Output
+        run: |
+          $hash = (git rev-parse --short HEAD)
+          $archive = "disabilitydude-$hash.zip"
+          $ProgressPreference = 'SilentlyContinue'
+          Compress-Archive -Path .\dist\disabilitydude -Destination ".\dist\$archive" -Force
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: disabilitydude
+          path: dist/*.zip
