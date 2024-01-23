@@ -170,7 +170,7 @@ def parse_work_history(page_text):
                     'job_title': e.split(": ")[1],
                     'intensity': '',
                     'skill_level': '',
-                    }
+                }
     return work_history
 
 
@@ -186,8 +186,6 @@ def get_exhibits_from_pdf(doc):
             exhibits[id] = ex
         if level == 3:
             index += 1
-    exhibits = {}
-
     sys.setrecursionlimit(1000)
     return exhibits
 
