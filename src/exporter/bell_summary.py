@@ -20,6 +20,7 @@ def generate_bell_format_summary(data):
     doc.add_paragraph(f'ALLEGED ONSET DATE:\t{data["onset_date"]}')
     doc.add_paragraph(f'DOB:\t\t\t\t{data["birthdate"]}')
     doc.add_paragraph(f'AGE:\t\t\t\t{data["age"]}')
+    doc.add_paragraph(f'DATE LATE INSURED:\t\t{data["claimant"].last_insured_date}')
     doc.add_paragraph(f'EDUCATION:\t\t\t{data["education"]}')
     if len(data["work_history"]) == 0:
         doc.add_paragraph('PAST WORK:\t\t\t')
