@@ -27,6 +27,10 @@ class Claimant:
             return None
 
     def age_at_onset(self) -> int:
+
+        if self.onset_date == "N/A":
+            return None
+
         if self.birthdate and self.onset_date:
             birthdate = datetime.strptime(self.birthdate, '%m/%d/%Y')
             onset_date = datetime.strptime(self.onset_date, '%m/%d/%Y')

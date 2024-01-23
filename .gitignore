@@ -13,4 +13,5 @@ lib/*
 *.json
 files
 *.drawio*
+*.docx
 .venv

@@ -1,10 +1,11 @@
 from datetime import datetime
-from tkinter import Toplevel, Button, Label, Entry, StringVar, Text, LabelFrame, Radiobutton
+from tkinter import Toplevel, Button, Label, Entry, StringVar, Text, LabelFrame, Radiobutton, LEFT
 from tkinter.ttk import Combobox
-
+from traceback import format_exc
 from src.helpers import get_save_path, get_file_path, get_age, get_age_at_onset
 from src.pdf.scanner import scan_for_comments, scan_pdf_for_summary
 from src.ui.workhistoryform import WorkHistoryForm
+from src.ui.errordialog import ErrorDialog
 from src.exporter import generate_summary
 
 
@@ -179,9 +180,15 @@ class SummaryForm(Toplevel):
         modal.grab_set()
         modal.geometry("+%d+%d" % (self.winfo_rootx()+50, self.winfo_rooty()+50))
         self.update()
-        self.medical_record = scan_pdf_for_summary(self.pdf_path)
-        self._fill_entry_fields()
-        modal.destroy()
+        try:
+            self.medical_record = scan_pdf_for_summary(self.pdf_path)
+            self._fill_entry_fields()
+            modal.destroy()
+        except Exception:
+            modal.destroy()
+            error = format_exc()
+            error_modal = ErrorDialog(self, error)
+            self.update()
 
     def _fill_entry_fields(self):
         mr = self.medical_record

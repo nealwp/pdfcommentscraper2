@@ -18,6 +18,7 @@ def generate_bell_format_summary(data):
     doc.add_paragraph(f'TYPE OF CLAIM:\t\t{data["claimant"].claim}')
     doc.add_paragraph(f'DATE OF APPLICATION:\t{datetime.strftime(data["claimant"].pdof, "%m/%d/%Y")}')
     doc.add_paragraph(f'ALLEGED ONSET DATE:\t{data["onset_date"]}')
+    doc.add_paragraph(f'DATE LATE INSURED:\t\t{data["claimant"].last_insured_date}')
     doc.add_paragraph(f'DOB:\t\t\t\t{data["birthdate"]}')
     doc.add_paragraph(f'AGE:\t\t\t\t{data["age"]}')
     doc.add_paragraph(f'EDUCATION:\t\t\t{data["education"]}')
@@ -65,6 +66,19 @@ def generate_bell_format_summary(data):
             for comment in data['exhibits'][exhibit].comments:
                 p = doc.add_paragraph()
                 p.add_run(f'{comment.date}: {comment.text} ({exhibit}/{comment.exhibit_page})')
+
+    doc.add_paragraph('')
+    doc.add_paragraph('')
+
+    doc.add_paragraph('CONSULTATIVE EXAM:')
+
+    doc.add_paragraph('')
+    doc.add_paragraph('')
+
+    doc.add_paragraph('MEDICAL-VOCATIONAL GRIDRULE AND/OR RULING:')
+
+    doc.add_paragraph('')
+    doc.add_paragraph('')
 
     for section in doc.sections:
         section.left_margin = Inches(1)

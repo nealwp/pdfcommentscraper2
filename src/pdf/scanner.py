@@ -129,14 +129,32 @@ def scan_pdf_for_summary(pdf_path):
 
 
 def parse_client_info(page_text):
-
-    lines = page_text.splitlines()
-    lines = [line for line in lines if line]
-    client_data = lines[:7]
     client_info = {}
-    for e in client_data:
-        e = e.split(':')
-        client_info[e[0]] = e[1].lstrip()
+    lines = page_text.splitlines()
+
+    for line in lines:
+        if line.startswith("Alleged Onset:"):
+            client_info["Alleged Onset"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("Application:"):
+            client_info["Application"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("Claim Type:"):
+            client_info["Claim Type"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("Claimant:"):
+            client_info["Claimant"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("Last Change:"):
+            client_info["Last Change"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("Last Insured:"):
+            client_info["Last Insured"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("SSN:"):
+            client_info["SSN"] = line.split(":")[1].strip()
+            continue
+
     return client_info
 
 
@@ -152,39 +170,47 @@ def parse_work_history(page_text):
                     'job_title': e.split(": ")[1],
                     'intensity': '',
                     'skill_level': '',
-                    }
+                }
     return work_history
 
 
 def get_exhibits_from_pdf(doc):
-    try:
-        outlines = doc.get_outlines()
-        sys.setrecursionlimit(999999999)
-        index = 1
-        provider = ''
-        exhibits = {}
-        for (level, title, dest, a, se) in outlines:
-            if level == 2:
-                provider = title
-                id = provider.split(":")[0]
-                provider_name = provider.split(":")[1].replace("Doc. Dt.", "").replace("Tmt. Dt.", "").strip()
-                provider_dates = re.sub(r"\(\d* page.*", "", provider.split(":")[2]).strip()
-                from_date = provider_dates.split("-")[0]
-                try:
-                    to_date = provider_dates.split("-")[1]
-                except IndexError:
-                    to_date = from_date
-                ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
-                exhibits[id] = ex
-            if level == 3:
-                index += 1
-    except PDFNoOutlines:
-        exhibits = {}
-        sys.setrecursionlimit(1000)
-        print('PDF has no outlines to reference.')
-
+    exhibits = {}
+    outlines = doc.get_outlines()
+    sys.setrecursionlimit(999999999)
+    index = 1
+    for (level, title, dest, a, se) in outlines:
+        if level == 2:
+            id, provider_name, from_date, to_date = parse_title(title)
+            ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
+            exhibits[id] = ex
+        if level == 3:
+            index += 1
     sys.setrecursionlimit(1000)
     return exhibits
+
+
+def parse_title(title):
+    split_title = title.split(":")
+    id = split_title[0]
+    provider_name = split_title[1].replace("Doc. Dt.", "").replace("Tmt. Dt.", "").strip()
+
+    # if no dates, return empty
+    if len(split_title) == 2:
+        provider_name = re.sub(r"\(\d* page.*", "", provider_name).strip()
+        return (id, provider_name, "", "")
+
+    provider_dates = re.sub(r"\(\d* page.*", "", split_title[2]).strip().split("-")
+
+    # if one date, return both as date
+    if len(provider_dates) == 1:
+        date = provider_dates[0]
+        return (id, provider_name, date, date)
+
+    from_date = provider_dates[0]
+    to_date = provider_dates[1]
+
+    return (id, provider_name, from_date, to_date)
 
 
 def parse_page_comments(annots):
