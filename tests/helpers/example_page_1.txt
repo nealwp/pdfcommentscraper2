@@ -1,0 +1,27 @@
+Claimant: John Person Doe
+SSN: 000-00-0000
+Last Change: 01/01/1970
+Alleged Onset: N/A
+
+Claim Type: T16
+Application: 01/01/2023
+Last Insured: N/A
+
+A. Payment Documents/Decisions
+Title
+1A: Disability Determination Explanation - DDE
+2A: Disability Determination Transmittal - 831
+3A: T16 Cease/Continue Disability Determination and Transmittal - 832
+4A: Disability Determination Explanation - DDE
+5A: Disability Determination Explanation - DDE
+6A: T16 Cease/Continue Disability Determination and Transmittal - 832
+7A: Disability Determination Explanation - DDE
+
+Decision Date
+08/06/2018
+08/06/2018
+08/30/2022
+08/30/2022
+02/23/2023
+05/17/2023
+05/17/2023

@@ -1,4 +1,4 @@
-from src.pdf.scanner import parse_title
+from src.pdf.scanner import parse_title, parse_client_info
 
 
 def test_parse_title():
@@ -35,3 +35,37 @@ def test_parse_title():
     for case in test_cases:
         result = parse_title(case["test"])
         assert result == case["expected"]
+
+
+def test_parse_client_info():
+    expected = [
+        {
+            "Alleged Onset": "N/A",
+            "Application": "01/01/2023",
+            "Claim Type": "T16",
+            "Claimant": "John Person Doe",
+            "Last Change": "01/01/1970",
+            "Last Insured": "N/A",
+            "SSN": "000-00-0000",
+        },
+        {
+            "Alleged Onset": "01/01/2009",
+            "Application": "02/26/2022",
+            "Claim Type": "T16",
+            "Claimant": "Jane Person Doe",
+            "Last Change": "01/01/1970",
+            "Last Insured": "N/A",
+            "SSN": "000-00-0000",
+        }
+    ]
+
+    inputs = [
+        "tests/helpers/example_page_1.txt",
+        "tests/helpers/example_page_1_alt.txt"
+    ]
+
+    for i, file in enumerate(inputs):
+        fd = open(file, "r")
+        page_one = str(fd.read())
+        result = parse_client_info(page_one)
+        assert result == expected[i]

@@ -1,0 +1,41 @@
+Claimant: Jane Person Doe
+SSN: 000-00-0000
+Last Change: 01/01/1970
+Alleged Onset: 01/01/2009
+
+A. Payment Documents/Decisions
+Title
+1A: Disability Determination Transmittal - 831
+2A: Disability Determination Explanation - DDE
+3A: Disability Determination Transmittal - 831
+4A: Disability Determination Explanation - DDE
+
+Claim Type: T16
+Application: 02/26/2022
+Last Insured: N/A
+
+B. Jurisdictional Documents/Notices
+Title
+1B: T16 Notice of Disapproved Claim - L444
+2B: Request for Reconsideration - 561
+3B: T16 Disability Reconsideration Notice - L1130
+4B: SSA-1696 - Claimant’s Appointment of a Representative - 1696
+5B: Fee Agreement for Representation before SSA - FEEAGRMT
+6B: SSA-1696 - Claimant’s Appointment of a Representative - 1696
+7B: Fee Agreement for Representation before SSA - FEEAGRMT
+8B: Request for Hearing by ALJ - 501
+9B: Hearing Agreement Form - HRNGAGREEFRM
+10B: Outgoing ODAR Correspondence - OUTODARC
+11B: Outgoing ODAR Correspondence - OUTODARC
+12B: Request for Hearing Acknowledgement Letter - HRGACK
+13B: Hearing Agreement Form - HRNGAGREEFRM
+14B: Hearing Notice - 507
+15B: Acknowledge Notice of Hearing - 504
+
+D. Non-Disability Development
+Title
+1D: Application for Supplemental Security Income Beneﬁts - 8000
+2D: Detailed Earnings Query - DEQY
+3D: Summary Earnings Query - SEQY
+4D: Certiﬁed Earnings Records - CERTERN
+5D: New Hire, Quarter Wage, Unemployment Query (NDNH) - NDNH

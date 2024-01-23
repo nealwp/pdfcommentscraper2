@@ -129,14 +129,32 @@ def scan_pdf_for_summary(pdf_path):
 
 
 def parse_client_info(page_text):
-
-    lines = page_text.splitlines()
-    lines = [line for line in lines if line]
-    client_data = lines[:7]
     client_info = {}
-    for e in client_data:
-        e = e.split(':')
-        client_info[e[0]] = e[1].lstrip()
+    lines = page_text.splitlines()
+
+    for line in lines:
+        if line.startswith("Alleged Onset:"):
+            client_info["Alleged Onset"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("Application:"):
+            client_info["Application"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("Claim Type:"):
+            client_info["Claim Type"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("Claimant:"):
+            client_info["Claimant"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("Last Change:"):
+            client_info["Last Change"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("Last Insured:"):
+            client_info["Last Insured"] = line.split(":")[1].strip()
+            continue
+        if line.startswith("SSN:"):
+            client_info["SSN"] = line.split(":")[1].strip()
+            continue
+
     return client_info
 
 
