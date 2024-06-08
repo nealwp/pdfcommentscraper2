@@ -187,7 +187,7 @@ class SummaryForm(Toplevel):
         except Exception:
             modal.destroy()
             error = format_exc()
-            error_modal = ErrorDialog(self, error)
+            ErrorDialog(self, error)
             self.update()
 
     def _fill_entry_fields(self):

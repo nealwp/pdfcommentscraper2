@@ -1,14 +1,11 @@
 import re
 import sys
-from io import StringIO
+import fitz
 from datetime import datetime
 from pdfminer.pdfdocument import PDFDocument, PDFNoOutlines
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdftypes import PDFObjRef
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 
 from src.pdf import MedicalRecord, Claimant, Comment, Exhibit, PageDetail
 
@@ -82,49 +79,53 @@ def scan_pdf_for_summary(pdf_path):
 
     mr = MedicalRecord(claimant=None, exhibits={}, pages={})
 
-    with open(pdf_path, 'rb') as in_file:
-        parser = PDFParser(in_file)
-        doc = PDFDocument(parser)
-        rsrcmgr = PDFResourceManager()
-        output_string = StringIO()
-        device = TextConverter(rsrcmgr, output_string, laparams=LAParams())
-        interpreter = PDFPageInterpreter(rsrcmgr, device)
+    doc = fitz.open(pdf_path)
+    mr.exhibits = get_exhibits_from_pdf(doc)
+    mr.pages = get_page_details_from_pdf(doc)
+    mr.claimant = Claimant(work_history=[])
 
-        mr.exhibits = get_exhibits_from_pdf(doc)
-        mr.pages = get_page_details_from_pdf(doc)
-        mr.claimant = Claimant(work_history=[])
+    for pagenumber in range(len(doc)):
+        page = doc.load_page(pagenumber)
+        page_text = page.get_text()
+        if pagenumber == 0:
+            client_info = parse_client_info(page_text)
+            mr.claimant.name = client_info['Claimant']
+            mr.claimant.ssn = client_info['SSN']
+            mr.claimant.onset_date = client_info['Alleged Onset']
+            mr.claimant.claim = client_info['Claim Type']
+            mr.claimant.pdof = datetime.strptime(client_info['Application'], '%m/%d/%Y')
+            mr.claimant.last_insured_date = client_info['Last Insured']
+            mr.claimant.birthdate = None
+        if not mr.claimant.birthdate:
+            mr.claimant.birthdate = parse_client_date_of_birth(page_text)
+            if mr.claimant.birthdate:
+                break
 
-        for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
-            interpreter.process_page(page)
-            page_text = output_string.getvalue()
-            if pagenumber == 1:
-                client_info = parse_client_info(page_text)
-                mr.claimant.name = client_info['Claimant']
-                mr.claimant.ssn = client_info['SSN']
-                mr.claimant.onset_date = client_info['Alleged Onset']
-                mr.claimant.claim = client_info['Claim Type']
-                mr.claimant.pdof = datetime.strptime(client_info['Application'], '%m/%d/%Y')
-                mr.claimant.last_insured_date = client_info['Last Insured']
-                mr.claimant.birthdate = None
-            if not mr.claimant.birthdate:
-                mr.claimant.birthdate = parse_client_date_of_birth(page_text)
-                if mr.claimant.birthdate:
-                    break
+        if len(mr.claimant.work_history) == 0:
+            mr.claimant.work_history = parse_work_history(page_text)
 
-            if len(mr.claimant.work_history) == 0:
-                mr.claimant.work_history = parse_work_history(page_text)
+    for pagenumber in range(len(doc)):
+        page = doc.load_page(pagenumber)
+        annotations = page.annots()
 
-        for pagenumber, page in enumerate(PDFPage.create_pages(doc), start=1):
-            if page.annots:
-                page_comments = parse_page_comments(page.annots)
-                if len(page_comments) > 0:
-                    exhibit_id = mr.pages[pagenumber].exhibit_id
-                    exhibit_page = mr.pages[pagenumber].exhibit_page
-                    for comment in page_comments:
-                        date = comment['date']
-                        text = comment['text']
-                        cm = Comment(date=date, text=text, page=pagenumber, exhibit_page=exhibit_page)
-                        mr.exhibits[exhibit_id].comments.append(cm)
+        if not annotations:
+            continue
+
+        page_comments = parse_page_comments(annotations)
+
+        if len(page_comments) == 0:
+            continue
+
+        exhibit_id = mr.pages[pagenumber+1].exhibit_id
+        exhibit_page = mr.pages[pagenumber+1].exhibit_page
+        for comment in page_comments:
+            date = comment['date']
+            text = comment['text']
+            cm = Comment(date=date, text=text, page=pagenumber+1, exhibit_page=exhibit_page)
+            mr.exhibits[exhibit_id].comments.append(cm)
+
+    doc.close()
+
     return mr
 
 
@@ -176,10 +177,10 @@ def parse_work_history(page_text):
 
 def get_exhibits_from_pdf(doc):
     exhibits = {}
-    outlines = doc.get_outlines()
+    outlines = doc.get_toc()
     sys.setrecursionlimit(999999999)
     index = 1
-    for (level, title, dest, a, se) in outlines:
+    for (level, title, page) in outlines:
         if level == 2:
             id, provider_name, from_date, to_date = parse_title(title)
             ex = Exhibit(provider_name=provider_name, from_date=from_date, to_date=to_date, comments=[])
@@ -217,9 +218,8 @@ def parse_page_comments(annots):
 
     page_comments = []
     for annot in annots:
-        por = PDFObjRef.resolve(annot)
-        if 'Contents' in por.keys():
-            text = por['Contents'].decode('utf-8', 'ignore')
+        if 'content' in annot.info.keys():
+            text = annot.info['content']
             comment = parse_comment(text)
             page_comments.append(comment)
 
@@ -244,12 +244,12 @@ def parse_client_date_of_birth(page_text):
 
 def get_page_details_from_pdf(doc):
     try:
-        outlines = doc.get_outlines()
+        outlines = doc.get_toc()
         index = 1
         provider = ''
         pages = {}
         sys.setrecursionlimit(2000)
-        for (level, title, dest, a, se) in outlines:
+        for (level, title, page) in outlines:
             if level == 2:
                 provider = title
             if level == 3:

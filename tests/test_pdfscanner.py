@@ -1,4 +1,4 @@
-from src.pdf.scanner import parse_title, parse_client_info
+from src.pdf import scanner
 
 
 def test_parse_title():
@@ -33,7 +33,7 @@ def test_parse_title():
     ]
 
     for case in test_cases:
-        result = parse_title(case["test"])
+        result = scanner.parse_title(case["test"])
         assert result == case["expected"]
 
 
@@ -67,5 +67,5 @@ def test_parse_client_info():
     for i, file in enumerate(inputs):
         fd = open(file, "r")
         page_one = str(fd.read())
-        result = parse_client_info(page_one)
+        result = scanner.parse_client_info(page_one)
         assert result == expected[i]
