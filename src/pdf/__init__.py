@@ -17,6 +17,20 @@ class Claimant:
     dds_rfc: dict = None
     claimed_mdsi: list = None
 
+    def __eq__(self, o):
+        if isinstance(self, o.__class__):
+            return self.name == o.name \
+                and self.ssn == o.ssn \
+                and self.birthdate == o.birthdate \
+                and self.education_years == o.education_years \
+                and self.onset_date == o.onset_date \
+                and self.pdof == o.pdof \
+                and self.claim == o.claim \
+                and self.last_insured_date == o.last_insured_date \
+                and self.work_history == o.work_history \
+                and self.dds_rfc == o.dds_rfc \
+                and self.claimed_mdsi == o.claimed_mdsi
+
     def age(self) -> int:
         if self.birthdate:
             today = date.today()
