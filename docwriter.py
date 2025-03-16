@@ -6,7 +6,7 @@ from docx.enum.style import WD_STYLE_TYPE
 from datetime import datetime
 from model.summary import MedicalSummary
 
-from medrecparser import Exhibit
+from view.controller.medrecparser import Exhibit
 
 def generate_chronological_medical_summary(summary: MedicalSummary):
     doc = docx.Document()

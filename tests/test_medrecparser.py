@@ -1,4 +1,4 @@
-from medrecparser import *
+from view.controller.medrecparser import *
 from pdfscanner import PDFData, Outline, Page
 
 fake_outlines = [
